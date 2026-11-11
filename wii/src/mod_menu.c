@@ -14,7 +14,8 @@
  *   port's words, not 20XX's addresses (in the plain game those are the
  *   game's own debug menu's data).
  * - Every item's callback is the port's (menu_event): opening a submenu,
- *   going back, a song played as it is chosen. None of 20XX's code runs.
+ *   going back, a song played with A (never by going through the songs).
+ *   None of 20XX's code runs.
  * - Y on the main menu's first screen (or Slippi's Online Play screen, where
  *   Slippi Online starts) leaves for the game's debug mode, as a
  *   menu entry leaves for its mode; that mode's scene opens its menu with a
@@ -623,8 +624,6 @@ static int menu_event(int event)
                 v--;
             }
             *value = v;
-        } else if (item->kind == KIND_CHOICE && is_song(item->value)) {
-            preview(*(u32*) item->value);
         } else if (item->value == melee_wii_mod_value(MOD_MUSIC_OFF)) {
             /* off: silence now; on again: the main menu asks for its song */
             lbAudioAx_800236DC();

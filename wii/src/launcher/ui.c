@@ -803,9 +803,6 @@ int launcher_ui(LauncherSettings* s)
         input_hand_over();
         return -1;
     }
-    /* an account in SlippWii's folder is copied now: Slippi Online is only
-     * listed with one (item_shown) */
-    launcher_slippi_folder();
     slippi_status(&st);
     for (;;) {
         unsigned int in = input_poll();

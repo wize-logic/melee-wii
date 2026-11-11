@@ -58,8 +58,7 @@ Launcher on your PC: https://slippi.gg).
    on the SD card or a USB drive).
 3. For Slippi Online: double-click "Copy my Slippi account (Melee).bat" on the
    SD card (it copies your login from Slippi Launcher), or copy user.json into
-   /apps/melee/slippi by hand. SlippWii's account on the card is used by
-   itself.
+   /apps/melee/slippi by hand.
 4. Start "Melee for the Wii" from the Homebrew Channel and pick Melee or
    Slippi Online. The first Slippi Online start makes Slippi's menus from your
    disc (a minute).

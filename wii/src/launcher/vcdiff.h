@@ -5,8 +5,8 @@
  * for its test (tools/test_vcdiff_c.py). Slippi's patches have no window
  * checksums, so a wrong source of the right size is not detected here: the
  * caller checks the result (vcdiff_crc32). */
-#ifndef SLIPPWII_VCDIFF_H
-#define SLIPPWII_VCDIFF_H
+#ifndef LAUNCHER_VCDIFF_H
+#define LAUNCHER_VCDIFF_H
 
 #include <stddef.h>
 

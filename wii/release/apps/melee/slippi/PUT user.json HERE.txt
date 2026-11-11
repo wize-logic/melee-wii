@@ -8,7 +8,4 @@ By hand: copy user.json from Slippi Launcher's files into this folder.
   macOS: ~/Library/Application Support/Slippi Launcher/netplay/User/Slippi/user.json
   Linux: ~/.config/Slippi Launcher/netplay/User/Slippi/user.json
 
-If you already use SlippWii, the launcher copies its user.json (from /slippwii
-on the SD card or a USB drive) by itself.
-
 user.json is your Slippi login: keep it private, don't share it.

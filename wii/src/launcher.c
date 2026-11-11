@@ -21,43 +21,10 @@
 #include "melee_wii.h"
 #include "slippi/so_wii.h"
 
-/* Where Slippi's account may already be: SlippWii's folder (whose
- * user.json is Slippi Launcher's, copied as is) */
-static const char* const ACCOUNTS[] = {
-    "sd:/slippwii/user.json",
-    "usb:/slippwii/user.json",
-};
-
 static int exists(const char* path)
 {
     struct stat st;
     return stat(path, &st) == 0;
-}
-
-static int copy_file(const char* from, const char* to)
-{
-    char buf[1024];
-    size_t n;
-    int ok = 1;
-    FILE* in = fopen(from, "rb");
-    FILE* out;
-    if (in == NULL) {
-        return -1;
-    }
-    out = fopen(to, "wb");
-    if (out == NULL) {
-        fclose(in);
-        return -1;
-    }
-    while ((n = fread(buf, 1, sizeof(buf), in)) > 0) {
-        if (fwrite(buf, 1, n, out) != n) {
-            ok = 0;
-            break;
-        }
-    }
-    fclose(in);
-    fclose(out);
-    return ok ? 0 : -1;
 }
 
 /* The Diagnostics setting's folder (slippi/so_gamelog.c writes a record of
@@ -102,9 +69,8 @@ static void diagnostics_folder(void)
     }
 }
 
-/* Slippi's folder, made if need be, with the account in it (copied from
- * SlippWii's folder when it has none). Returns 0, or < 0
- * when there is no account anywhere. */
+/* Slippi's folder, made if need be. Returns 0, or < 0 when the account
+ * (user.json, Slippi Launcher's, copied as is) is not in it. */
 int launcher_slippi_folder(void)
 {
     char user[128];
@@ -113,16 +79,7 @@ int launcher_slippi_folder(void)
     mkdir(LAUNCHER_SLIPPI "/files", 0777);
     mkdir(LAUNCHER_SLIPPI "/replays", 0777);
     snprintf(user, sizeof(user), "%s/user.json", LAUNCHER_SLIPPI);
-    if (exists(user)) {
-        return 0;
-    }
-    for (size_t i = 0; i < sizeof(ACCOUNTS) / sizeof(ACCOUNTS[0]); i++) {
-        if (exists(ACCOUNTS[i]) && copy_file(ACCOUNTS[i], user) == 0) {
-            WL_LOG_I("launcher", "Slippi's account: copied from %s", ACCOUNTS[i]);
-            return 0;
-        }
-    }
-    return -1;
+    return exists(user) ? 0 : -1;
 }
 
 /* The player's cheats (offline): a Gecko .gct, run as a code handler would
@@ -200,7 +157,7 @@ void melee_wii_launch(void)
     int res;
 
     LauncherSettings before;
-    /* A USB drive, for a mod's image, cheats or an account on it: the disc's
+    /* A USB drive, for a mod's image or cheats on it: the disc's
      * own lookup (dvd.c) mounts it only when the SD card has no image */
     wl_platform_fs_mount(WL_DEVICE_USB);
     launcher_settings_load(&s, LAUNCHER_SETTINGS);

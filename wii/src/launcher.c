@@ -202,12 +202,18 @@ void melee_wii_launch(void)
     so.mods = s.mods;
     so.stages = s.stages;
     so.gameplay = s.gameplay;
+    /* Melee is the game as the disc has it until a setting says otherwise,
+     * but for the picture: on a Wii set to 16:9, Auto gives it Slippi's
+     * widescreen code, the one code it gets by itself. Slippi's recording
+     * (its core codes: replays and console mirroring, the start at the VS
+     * character select, everything unlocked) is in Melee only with "Record
+     * Melee's games" */
     so.screen = s.screen != LAUNCH_SCREEN_AUTO           ? s.screen
                 : CONF_GetAspectRatio() == CONF_ASPECT_16_9 ? SO_WII_SCREEN_WIDE
                                                             : SO_WII_SCREEN_OFF;
     so.safety = s.safety;
-    so.replays = s.replays;
-    so.console = s.console;
+    so.replays = s.replays && (so.online || s.offline_record);
+    so.console = s.console && (so.online || s.offline_record);
     so.diagnostics = s.diagnostics;
     if (so.online && so.diagnostics) {
         diagnostics_folder();

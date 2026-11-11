@@ -193,8 +193,11 @@ Nintendo's Wii LAN Adapter, or a third-party one with that chip.
   memory beside the savestates). The metadata holds the start time and `playedOn: "wii"` only. A
   card too slow for the stream cuts the replay short.
 - **Console mirroring** is Slippi Nintendont's protocol: Slippi Launcher connects to the Wii to
-  watch, record or relay games. Offline, replays and mirroring bring Slippi's core codes, which
-  record the games and start at the VS character select screen, as Slippi Nintendont does.
+  watch, record or relay games.
+- **Melee's own games** are recorded and mirrored only with the launcher's **Record Melee's games**
+  (`offline_record=`, off by default): it brings Slippi's core codes into Melee, which record the
+  games, start at the VS character select screen and unlock everything, as Slippi Nintendont
+  does. Without it Melee runs none of Slippi's code.
 
 ## Diagnostics
 

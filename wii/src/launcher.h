@@ -11,7 +11,8 @@
 enum { LAUNCH_MELEE, LAUNCH_ONLINE, LAUNCH_MOD };
 
 /* LauncherSettings.screen: SO_WII_SCREEN_* (so_wii.h), or Auto: Slippi's
- * widescreen code when Wii Settings say 16:9 */
+ * widescreen code when Wii Settings say 16:9 (in Melee too: the one code it
+ * is given without a setting of the player's asking for it) */
 #define LAUNCH_SCREEN_AUTO 3
 
 /* sd:/apps/melee/settings.ini. The online rumble and connection are
@@ -28,8 +29,9 @@ typedef struct LauncherSettings {
     int screen;
     int safety;
     int cheats;  /* the player's Gecko codes (codes/GALE01.gct), offline */
-    int replays; /* a .slp of each game (Slippi's recording; offline too) */
+    int replays; /* a .slp of each game (Slippi's recording) */
     int console; /* Slippi Launcher's console mirroring (TCP 51441) */
+    int offline_record; /* the two above for Melee's games too: Slippi's core codes in Melee */
     int xx_menu; /* 20XX's menu in Slippi Online, from a 20XX image (mod_values.c) */
     int diagnostics; /* a record of each online game's timing in logs/diag (slippi/so_gamelog.c) */
     char mod_path[160]; /* LAUNCH_MOD: the modded image (20XX), launcher/mods.c */

@@ -6,7 +6,9 @@ disc image, with a launcher and Slippi Online.
 - **The game** is the original game code: the decompilation's matching build, placed at the
   GameCube's addresses, so it behaves exactly as on a GameCube and GameCube Gecko codes work. The
   parts of the GameCube's SDK a Wii can't run (OS, VI, PAD, DVD, EXI, the memory card, ARAM, AX/DSP
-  sound, THP) are replaced by the port's own, over libogc.
+  sound, THP) are replaced by the port's own, over libogc. **Melee** in the launcher is the game as
+  your disc has it: none of Slippi's or 20XX's code unless a setting of yours says so, but for
+  widescreen on a Wii set to 16:9.
 - **The launcher** comes up first: Melee, Slippi Online or a mod, with settings and help.
 - **Slippi Online** is a Slippi client on the Wii itself, with rollback, against players on Slippi
   Dolphin, over a LAN adapter or Wi-Fi.
@@ -27,9 +29,9 @@ are in this repository or in a release.
 |---|---|
 | The game | All modes, sound and music, movies, saves (on the SD card), 480p with a component cable |
 | Slippi Online | Direct and Unranked, with rollback, over a wired connection or Wi-Fi; quick chat, connect code history, rumble |
-| Replays | Every game, online and offline VS, as a `.slp` file |
+| Replays | Every online game as a `.slp` file; Melee's own games too, with **Record Melee's games** |
 | Console mirroring | Slippi Launcher can connect to the Wii to watch, record or relay games |
-| Slippi's offline codes | UCF 0.84, PAL balance, Stealth/Tournament/Friendlies, frozen stages, ledge grab and wobbling limits, widescreen, safety |
+| Slippi's offline codes | For Melee, each off until you turn it on: UCF 0.84, PAL balance, Stealth/Tournament/Friendlies, frozen stages, ledge grab and wobbling limits, safety. Widescreen follows Wii Settings |
 | 20XX | 20XX Hack Pack (or another 1.02 mod) from its own disc image; part of its menu in Slippi Online |
 | Cheats | Your own Gecko codes, offline |
 | Controllers | GameCube controllers; Classic Controllers on Wiis without GameCube ports |
@@ -69,7 +71,7 @@ The disc image is looked for as `/apps/melee/game.iso`, `/apps/melee/GALE01.iso`
 
 | Item | |
 |---|---|
-| **Melee** | The game, with the codes chosen in Settings |
+| **Melee** | The game as the disc has it, or with the codes chosen in Settings |
 | **Slippi Online** | Shown once there is a disc image, an account and Slippi's files. The first start makes Slippi's menus from your disc (about a minute) |
 | **20XX** / **Modded Melee** | Shown with a mod's disc image; Left/Right picks among several |
 | **Settings**, **Game info**, **Exit** | Game info shows the disc, its MD5 check, the account and Slippi's files |
@@ -95,17 +97,21 @@ Kept in `sd:/apps/melee/settings.ini`.
 | Convenience | Off, Stealth, Tournament, Friendlies | Offline: Slippi's convenience codes |
 | Frozen stages | Off, Pokémon Stadium, All | Offline |
 | Gameplay | Off, Ledge grab limit, Wobbling limit, Both | Offline |
-| Screen | Auto, 4:3, Widescreen 16:9, 16:9 with 4:3 inside | Slippi's widescreen code; Auto follows Wii Settings |
+| Screen | Auto, 4:3, Widescreen 16:9, 16:9 with 4:3 inside | Slippi's widescreen code, in Melee and Slippi Online (20XX has its own). Auto follows Wii Settings |
 | Safety | Off, On | Offline |
 | Cheats | Off, On | Offline: see [Cheats](#cheats) |
-| Replays | On, Off | |
-| Console mirroring | On, Off | |
+| Replays | On, Off | Slippi Online's games |
+| Console mirroring | On, Off | Slippi Online's games |
+| Record Melee's games | Off, On | Replays and Console mirroring for Melee's games too: see below |
 | Skip this screen | Off, On | Starts the last choice at once. Hold B as it starts to get the launcher back: on a GameCube controller, or with none plugged in, 1 or B on a Wii Remote (b on its Classic Controller) |
 | Diagnostics | Off, On | Records each online game's timing: [docs/netplay.md](docs/netplay.md#diagnostics) |
 | 20XX menu | Off, On | Slippi Online only. Shown with a 20XX image: see [20XX](#20xx) |
 
-Offline, Replays and Console mirroring bring Slippi's core codes, which record the games and start
-at the VS character select screen, as Slippi Nintendont does.
+With every setting at its default, **Melee** runs no code but the disc's, with one exception: on a
+Wii set to 16:9, Slippi's widescreen code, so the picture is widescreen (set **Screen** to 4:3 for
+none). **Record Melee's games** brings Slippi's core codes into it, as Slippi Nintendont does: they
+record the games (for Replays and Console mirroring, whichever is on), start at the VS character
+select screen and unlock everything.
 
 With a component cable and the Wii set to 480p, the game boots in 480p without asking; B held at
 the start still asks.

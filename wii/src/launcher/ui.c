@@ -480,6 +480,8 @@ static void settings(LauncherSettings* s)
         { NULL, "Console mirroring", ON_OFF, 2, &s->console,
           "Slippi Launcher can connect to this Wii (Console Mirroring) to watch, record or relay "
           "games." },
+        { NULL, "Record Melee's games", ON_OFF, 2, &s->offline_record,
+          "Replays and mirroring for Melee too. Unlocks everything." },
         { "Launcher", "Skip this screen", ON_OFF, 2, &s->skip,
           "Start the last choice at once. Hold B as the game starts for this screen (on a Wii "
           "Remote, 1 or B, when no GameCube controller is plugged in)." },

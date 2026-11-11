@@ -17,6 +17,7 @@ static const struct {
     K(mode),     K(skip),     K(controller_fix), K(pal),    K(mods),
     K(stages),   K(gameplay), K(screen),         K(safety), K(cheats),
     K(replays),  K(console),  K(xx_menu),       K(diagnostics),
+    K(offline_record),
 #undef K
 };
 
@@ -74,6 +75,7 @@ int launcher_settings_load(LauncherSettings* s, const char* path)
     s->replays = s->replays != 0;
     s->console = s->console != 0;
     s->xx_menu = s->xx_menu != 0;
+    s->offline_record = s->offline_record != 0;
     s->diagnostics = s->diagnostics != 0;
     return 0;
 }

@@ -59,7 +59,8 @@ and any disc other than NTSC 1.02.
      `%APPDATA%\Slippi Launcher` (Windows), `~/Library/Application Support/Slippi Launcher`
      (macOS) or `~/.config/Slippi Launcher` (Linux).
 
-   `user.json` is your login: keep it private.
+   `user.json` is your login: keep it private. If you already use SlippWii, the launcher copies
+   its account (`/slippwii/user.json`) by itself.
 4. Start **Melee for the Wii** from the Homebrew Channel.
 
 The disc image is looked for as `/apps/melee/game.iso`, `/apps/melee/GALE01.iso`,

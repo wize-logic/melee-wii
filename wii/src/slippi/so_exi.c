@@ -229,6 +229,9 @@ static struct {
 
 /* wii/src/overlay.c (the Wii build with the game's own code) */
 void melee_wii_ping_text(int ms) __attribute__((weak));
+/* wii/src/mod_fighters.c (20XX's costumes are this console's player's only):
+ * that player's character and costume in the match made, or -1 while none is */
+void melee_wii_costumes_match(int character, int costume) __attribute__((weak));
 
 static void init_once(void)
 {
@@ -1081,6 +1084,12 @@ static u32 build_game(int remotes, u8 *alt_out)
 		b[0x62 + i * 0x24] = 4;	/* stocks */
 		so_put_u16(b + 0x70 + i * 0x24, 0);	/* percent */
 	}
+	if (melee_wii_costumes_match != NULL) {
+		if (lps->player_idx <= SO_REMOTE_MAX)
+			melee_wii_costumes_match(b[0x60 + lps->player_idx * 0x24], b[0x63 + lps->player_idx * 0x24]);
+		else
+			melee_wii_costumes_match(0xFF, 0);	/* (no slot of ours: nobody's) */
+	}
 	*alt_out = alt;
 	return rng;
 }
@@ -1092,7 +1101,7 @@ static void on_get_match_state(void)
 	u8 *r, state, local_ready, remote_ready = 0, chat_id = 0, chat_player = 0, sent = 0, alt = 0;
 	u8 delay = so_client_config()->delay;
 	u32 rng = 0;
-	int remotes = 0, i;
+	int remotes = 0, built = 0, i;
 	char error[128];
 
 	for (;;) {
@@ -1162,13 +1171,18 @@ static void on_get_match_state(void)
 		}
 		if (remotes == 1)
 			chat_player = sent ? x.local_idx : x.remote_idx;
-		if (local_ready && remote_ready)
+		if (local_ready && remote_ready) {
 			rng = build_game(remotes, &alt);
+			built = 1;
+		}
 		/* (the game takes the delay from this answer as a match starts) */
 		delay = so_client_match_delay();
 		so_client_unlock();
 		break;
 	}
+
+	if (!built && melee_wii_costumes_match != NULL)
+		melee_wii_costumes_match(-1, 0);	/* no match yet: build_game says when */
 
 	r[0x000] = state;
 	r[0x001] = local_ready;

@@ -63,6 +63,7 @@ int melee_wii_stages_allowed(u32 stage, u32 skin);
 int melee_wii_costumes_toggle(const char* file, u32 set);
 void melee_wii_costumes_set(const char* file, u32 set);
 int melee_wii_costumes_chosen(const char* file);
+void melee_wii_costumes_mine(BOOL match, const char* file, const char* second);
 
 /* mod_fighters.c */
 void melee_wii_fighters_start(void);

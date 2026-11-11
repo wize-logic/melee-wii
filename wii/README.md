@@ -165,7 +165,7 @@ A opens or plays, B goes back, Start leaves.
 | Stage textures | 20XX's looks for Battlefield, Final Destination, Yoshi's Story, Fountain of Dreams, Dream Land and Pokémon Stadium, or a random one each match |
 | Stage colors | Final Destination's custom colour |
 | Shield colors | Each player's shield colour. Online, the first is yours |
-| 20XX costumes | L and R on the character select screen give your character its costume's two others |
+| 20XX costumes | L and R on the character select screen give your character its costume's two others. Online, only your own character wears one |
 
 Nothing else of 20XX's menu is there: the rest changes the game, and an opponent on plain Slippi
 must be playing the same match. For the same reason none of 20XX's code runs, and a stage look or

@@ -90,7 +90,15 @@ static const u32 FD_COLORS[2] = { 0x7974, 0x7B84 };
  * hitboxes hang on, and that must be the original's. In 20XX the choice is a
  * letter of the file's name in the game's table of costumes, so it is the
  * costume's, whoever plays it; here too (and no two players have the same
- * costume). It lasts until the game is left. */
+ * costume). It lasts until the game is left.
+ *
+ * Online the players at this console's character select are one, and a
+ * choice is that player's alone: once a match's players are known
+ * (melee_wii_costumes_mine), only the costume this console's player wears in
+ * it is 20XX's. An opponent in a costume chosen here for an earlier match is
+ * drawn in the game's own. (The game has one file for a character's costume:
+ * an opponent in the very costume this console's player wears now is drawn
+ * as that player is.) */
 #define COSTUMES 160
 #define COSTUME_SETS 2
 static const char* const SET_EXT[COSTUME_SETS] = { ".lat", ".rat" };
@@ -104,6 +112,8 @@ typedef struct Costume {
 } Costume;
 static Costume s_costumes[COSTUMES];
 static u32 s_costume_count;
+static BOOL s_match;       /* an online match's players are known */
+static char s_mine[2][8];  /* this console's player's costume in it, and its second character's */
 
 static Look s_looks[MOD_SKINS][LOOKS];
 static u32 s_fd_offset, s_fd_size; /* the game's own, in its image */
@@ -460,6 +470,43 @@ static void roll(void)
     }
 }
 
+/* The set a costume is drawn in now (0: the game's own) */
+static u32 shown(const Costume* costume)
+{
+    u32 set = costume->chosen;
+    if (set == 0 || set > COSTUME_SETS || !costume->set[set - 1].ok) {
+        return 0;
+    }
+    if (s_match && strncmp(costume->name, s_mine[0], 6) != 0 && strncmp(costume->name, s_mine[1], 6) != 0) {
+        return 0; /* another player's, in an online match */
+    }
+    return set;
+}
+
+/* mod_fighters.c: an online match's players are known, and these are the
+ * files ("PlFxNr.dat"; NULL: none) of this console's player's costume in it;
+ * or, with `match` 0, no such match is on, and a choice is the costume's
+ * again. */
+void melee_wii_costumes_mine(BOOL match, const char* file, const char* second)
+{
+    char mine[2][8];
+    memset(mine, 0, sizeof(mine));
+    if (match && file != NULL) {
+        strncpy(mine[0], file, 6);
+    }
+    if (match && second != NULL) {
+        strncpy(mine[1], second, 6);
+    }
+    if (match == s_match && memcmp(mine, s_mine, sizeof(mine)) == 0) {
+        return;
+    }
+    s_match = match;
+    memcpy(s_mine, mine, sizeof(mine));
+    if (match) {
+        OSReport("20XX costumes: an online match: 20XX's for this console's player's only (%s %s)\n", mine[0], mine[1]);
+    }
+}
+
 /* mod_fighters.c: L or R on a costume. The costume of this file ("PlFxNr.dat")
  * becomes the set's, or the game's own again if it was the set's: the set it
  * now is (0: the game's own), or -1 when 20XX has no such costume that can
@@ -486,8 +533,7 @@ int melee_wii_costumes_chosen(const char* file)
 {
     for (u32 c = 0; file != NULL && c < s_costume_count; c++) {
         if (strncmp(s_costumes[c].name, file, 6) == 0) {
-            u32 set = s_costumes[c].chosen;
-            return set != 0 && s_costumes[c].set[set - 1].ok ? (int) set : 0;
+            return (int) shown(&s_costumes[c]);
         }
     }
     return 0;
@@ -510,6 +556,9 @@ void melee_wii_stages_scene(int kind)
 {
     if (kind == 1 || kind == 8) {
         roll();
+        /* (no match is on at either; so_exi.c says so too, as Slippi's
+         * character select asks it, but the game's own asks nothing) */
+        melee_wii_costumes_mine(FALSE, NULL, NULL);
     }
 }
 
@@ -528,11 +577,12 @@ s32 melee_wii_stages_substitute(const char* path)
         u32 on = *melee_wii_mod_value(MOD_COSTUMES);
         for (u32 c = 0; on != 0 && c < s_costume_count; c++) {
             char name[16];
-            u32 set = s_costumes[c].chosen;
+            u32 set;
             if (strncmp(s_costumes[c].name, base, 6) != 0) {
                 continue;
             }
-            if (set == 0 || set > COSTUME_SETS || !s_costumes[c].set[set - 1].ok) {
+            set = shown(&s_costumes[c]);
+            if (set == 0) {
                 return -1;
             }
             snprintf(name, sizeof(name), "/%.6s%s", s_costumes[c].name, SET_EXT[set - 1]);

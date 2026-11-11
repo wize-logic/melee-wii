@@ -128,6 +128,23 @@ static const char* costume_file(int fighter, u32 costume)
     return name >= 0x80003100u && name < 0x817F0000u ? (const char*) name : NULL;
 }
 
+/* so_exi.c, each time Slippi's character select asks how its match stands:
+ * this console's player's character and costume in the match the game is
+ * being given (both players have chosen), or a character of -1 while there
+ * is none. From then until the next character select a costume of 20XX's is
+ * that player's only (mod_stages.c). */
+void melee_wii_costumes_match(int character, int costume)
+{
+    if (character < 0) {
+        melee_wii_costumes_mine(FALSE, NULL, NULL);
+    } else if (character >= 33 || costume < 0) {
+        melee_wii_costumes_mine(TRUE, NULL, NULL);
+    } else {
+        melee_wii_costumes_mine(TRUE, costume_file(FIGHTERS[character * 3], (u32) costume),
+                                costume_file(FIGHTERS[character * 3 + 1], (u32) costume));
+    }
+}
+
 /* What a player's costume is, shown on the player's window as 20XX shows
  * it: the window's two colours (the port's red, blue, yellow or green, a
  * light and a dark one) become two of the costume's own. 20XX's are in its

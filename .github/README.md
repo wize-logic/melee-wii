@@ -14,6 +14,12 @@ Super Smash Bros Melee \
 
 This repo contains a matching decompilation of Super Smash Bros Melee (US).
 
+> [!NOTE]
+> This fork of [doldecomp/melee](https://github.com/doldecomp/melee) adds **Melee for the Wii**: the
+> game running natively on the Wii as a Homebrew Channel program, from your own disc image, with a
+> launcher and Slippi Online with rollback. See [wii/README.md](../wii/README.md). Everything else
+> here is the decompilation.
+
 > [!TIP]
 > The DOL this repository builds can be shifted! Meaning you are able to now add and remove code as you see fit, for modding or research purposes.
 

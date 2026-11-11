@@ -65,7 +65,6 @@ and any disc other than NTSC 1.02.
 
 The disc image is looked for as `/apps/melee/game.iso`, `/apps/melee/GALE01.iso`,
 `/games/GALE01.iso`, `/games/melee.iso` and `/melee.iso`, on the SD card and then on a USB drive.
-A USB drive is only read when the SD card has no disc image.
 
 ## The launcher
 
@@ -147,8 +146,8 @@ from the connection and the ping, as the match starts:
 ## 20XX
 
 Make your 20XX image with [20XX Hack Pack](https://github.com/DRGN-DRC/20XX-HACK-PACK)'s own
-creator, from your NTSC 1.02 image, and put it in `/games`, `/apps/melee` or the card's root (any
-name ending in `.iso` or `.gcm`). The launcher lists it as **20XX**: it starts without Slippi and
+creator, from your NTSC 1.02 image, and put it in `/games`, `/apps/melee` or the root of the SD
+card or a USB drive (any name ending in `.iso` or `.gcm`). The launcher lists it as **20XX**: it starts without Slippi and
 keeps its own saves. Any other 1.02 mod is listed as **Modded Melee**. Up to four are listed.
 
 20XX's own widescreen follows the launcher's Screen setting, and its lag reduction ("Are you
@@ -185,8 +184,8 @@ setting on checks the image's files (about 40 s). For 20XX 5.0.2, 49 of 75 stage
 ## Cheats
 
 Your own Gecko codes for NTSC 1.02, offline, with Settings' **Cheats** on:
-`/apps/melee/codes/GALE01.gct` (or `/codes/GALE01.gct`), the file Nintendont and Dolphin use, under
-512 KB.
+`/apps/melee/codes/GALE01.gct` (or `/codes/GALE01.gct`, there or on a USB drive), the file
+Nintendont and Dolphin use, under 512 KB.
 
 - Read: RAM writes and fills (00, 02, 04, 06, 08), if codes (20–2E), their pointer forms, base
   address and end-if codes (42, 4A, E0, E2), and inserted code (C2).
@@ -219,8 +218,6 @@ All under `sd:/apps/melee/`.
 - **A crash** is shown on the screen and written to `logs/log.txt`: where, the registers, the
   calls. A game that stops (no new frame for 5 s) is logged with what it waits in.
 - **Skip this screen is on and there is no GameCube controller:** set `skip=0` in `settings.ini`.
-- **A mod or cheats on a USB drive are not found:** USB is only read when the disc image is not on
-  the SD card.
 - **Online games run badly:** turn Diagnostics on, play, and read the records with
   `wii/tools/gamelog.py` ([docs/netplay.md](docs/netplay.md#diagnostics)).
 

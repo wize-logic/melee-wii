@@ -15,6 +15,7 @@
 #include <gccore.h>
 
 #include <wl/base/base.h>
+#include <wl/platform/platform.h>
 
 #include "launcher/mods.h"
 #include "melee_wii.h"
@@ -199,6 +200,9 @@ void melee_wii_launch(void)
     int res;
 
     LauncherSettings before;
+    /* A USB drive, for a mod's image, cheats or an account on it: the disc's
+     * own lookup (dvd.c) mounts it only when the SD card has no image */
+    wl_platform_fs_mount(WL_DEVICE_USB);
     launcher_settings_load(&s, LAUNCHER_SETTINGS);
     before = s;
     /* written only when changed: the fewer writes to the card the better */

@@ -90,6 +90,8 @@ static volatile u32 s_event_count;
 static u32 s_max_events, s_lost_events;
 static char* s_text;
 static u8* s_head; /* (aligned, for the SD driver) */
+#define HEAD_BYTES 36 /* the file's header (write_file) */
+#define HEAD_SIZE 64  /* its buffer: whole cache lines */
 static volatile u32 s_poll_count, s_packet_count;
 static u32 s_text_len;
 static u32 s_lost_polls, s_lost_packets;
@@ -313,7 +315,7 @@ static void write_file(void)
     so_put_u32(s_head + 24, s_packet_count);
     so_put_u32(s_head + 28, sizeof(Event));
     so_put_u32(s_head + 32, events / sizeof(Event));
-    ok = so_file_write(file, s_head, 36) == 0 && write_all(file, s_text, s_text_len) == 0 &&
+    ok = so_file_write(file, s_head, HEAD_BYTES) == 0 && write_all(file, s_text, s_text_len) == 0 &&
          write_all(file, s_polls, polls) == 0 && write_all(file, s_packets, packets) == 0 &&
          write_all(file, s_events, events) == 0;
     so_file_close(file);
@@ -342,7 +344,7 @@ static void take_memory(void)
         s_packets = memalign(32, s_max_packets * sizeof(Packet));
         s_events = memalign(32, s_max_events * sizeof(Event));
         s_text = memalign(32, TEXT_SIZE);
-        s_head = memalign(32, 32);
+        s_head = memalign(32, HEAD_SIZE);
         spare = memalign(32, SPARE); /* (what the game's other parts may still need) */
         free(spare);
         if (s_polls != NULL && s_packets != NULL && s_events != NULL && s_text != NULL && s_head != NULL &&

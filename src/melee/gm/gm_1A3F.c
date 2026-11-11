@@ -181,6 +181,19 @@ void gm_801A4014(GameMode* mode)
      */
     scene =
         (GameScene*) ((uintptr_t) gm_FindGameSceneHandler(kind) | (zero = 0));
+#ifdef MELEE_SYNCTEST
+    {
+        extern void synctest_scene(int kind);
+        synctest_scene(kind);
+    }
+#endif
+#ifdef TARGET_WII
+    {
+        extern void melee_wii_scene(int kind);
+        OSReport("scene: state %d kind %d\n", state->id, kind);
+        melee_wii_scene(kind);
+    }
+#endif
     gm_801A4BD4();
     gm_801A4B88(info);
     if (scene->on_enter != NULL) {

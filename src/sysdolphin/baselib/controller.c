@@ -360,6 +360,12 @@ void HSD_PadRenewMasterStatus(void)
         qread = &p->queue->stat[p->qread * 4];
         HSD_PadRawQueueShift(p->qnum, &p->qread);
         p->qcount -= 1;
+#ifdef MELEE_SYNCTEST
+        {
+            extern void synctest_pad(PADStatus * status);
+            synctest_pad(qread);
+        }
+#endif
 
         for (i = 0; i < 4; i++, mp += 1, qread += 1) {
             mp->last_button = mp->button;

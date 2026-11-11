@@ -341,6 +341,10 @@ void gm_SetupTitleDemo(void)
     s32 prev;
     u8 cur_id;
 
+#ifdef MELEE_SYNCTEST
+    /* gm/synctest.inc: the same demo in every build */
+    *HSD_RandSeedPtr = 0x2468ACE0;
+#endif
     count = 0;
     for (c = 0; c < CKind_Playable_Count; c++) {
         if (gm_IsCKindUnlocked(c) != 0) {

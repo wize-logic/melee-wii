@@ -345,6 +345,12 @@ void gm_801A4D34(void (*on_frame)(void), UNUSED GameSceneInfo* info)
                 temp_r25->unk_10.pre_gobj_proc();
             }
             HSD_GObj_RunProcs();
+#ifdef MELEE_SYNCTEST
+            {
+                extern void synctest_frame(void);
+                synctest_frame();
+            }
+#endif
             if (temp_r25->unk_0 != -2) {
                 temp_r25->unk_0++;
             }
@@ -383,3 +389,7 @@ void gm_801A4D34(void (*on_frame)(void), UNUSED GameSceneInfo* info)
     }
     HSD_VIWaitXFBFlush();
 }
+
+#ifdef MELEE_SYNCTEST
+#include "synctest.inc"
+#endif

@@ -64,13 +64,16 @@ unsigned int melee_wii_scene_first_load(void)
 }
 
 /* 20XX's widescreen, for the launcher's Screen setting (launcher.c sets
- * this for a mod when the setting, or Wii Settings under Auto, says 16:9).
+ * this for a mod: 1 when the setting, or Wii Settings under Auto, says 16:9,
+ * 0 when it doesn't; -1, nothing was asked).
  * 20XX has its own widescreen code (Dan Salvato's, with Achilles's changes),
- * run by a value of its debug menu: 0 off, 1 the 16:9 picture. The menu's
- * values come back from its save as it starts, so the value is set once the
+ * run by a value of its debug menu: 0 off, 1 the 16:9 picture, 2 to 4 its
+ * other pictures. The menu's values come back from its save as it starts,
+ * the widescreen of the time before among them, so the value is set once the
  * game is past that (its second and third scenes), and only where that code
- * is; the player can still turn it off there. */
-int melee_wii_mod_wide;
+ * is: on if it is off, off if it is on. The player can still change it
+ * there, until the game is next started. */
+int melee_wii_mod_wide = -1;
 
 #ifdef MELEE_ORIG_CODE
 static void mod_widescreen(void)
@@ -80,7 +83,7 @@ static void mod_widescreen(void)
      * 5.0.2; its map file has another build's address) */
     volatile u32* value = (volatile u32*) 0x803FA3D0u;
     int found = 0;
-    if (!melee_wii_mod_wide) {
+    if (melee_wii_mod_wide < 0) {
         return;
     }
     for (volatile u32* code = (volatile u32*) 0x80331000u; code < (volatile u32*) 0x80332000u; code++) {
@@ -92,9 +95,13 @@ static void mod_widescreen(void)
     if (!found) {
         return;
     }
-    if (*value == 0) {
+    if (melee_wii_mod_wide && *value == 0) {
         *value = 1;
         OSReport("20XX: its widescreen turned on (the launcher's Screen setting)\n");
+    } else if (!melee_wii_mod_wide && *value != 0) {
+        /* its save's, from a time the setting said 16:9 or its menu did */
+        *value = 0;
+        OSReport("20XX: its widescreen turned off (the launcher's Screen setting)\n");
     }
 }
 #else

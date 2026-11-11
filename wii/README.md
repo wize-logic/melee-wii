@@ -154,10 +154,17 @@ using HDMI?") works. Tested with 20XX 5.0.2.
 
 ### 20XX's menu in Melee and Slippi Online
 
-With a 20XX image on the card, Settings has **20XX menu**. On, **Y on the game's main menu** opens
-the part of 20XX's debug menu that changes only sound or picture, with your image's songs and
-files. In Slippi Online it is also **Extra** on the Online Play screen. The stick or D-pad moves,
-A opens or plays, B goes back, Start leaves.
+To turn it on: with a 20XX image on the card, open the launcher's **Settings** (X; + on a Wii
+Remote) and set **20XX menu** to On. It is off by default, and listed only while a 20XX image is
+found.
+
+It gives the part of 20XX's debug menu that changes only sound or picture, with your image's songs
+and files:
+
+- **Slippi Online:** **Extra** on the Online Play screen, under Party.
+- **Melee:** **Y** on the main menu's first screen (Y opens it from the Online Play screen too).
+
+The stick or D-pad moves, A opens or plays, B goes back, Start leaves.
 
 | | |
 |---|---|

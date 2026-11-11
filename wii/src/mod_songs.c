@@ -1,4 +1,4 @@
-/* 20XX's music playlists in the plain game and Slippi Online (mod_values.c).
+/* 20XX's music playlists in Slippi Online (mod_values.c).
  *
  * 20XX does it with a patch at the start of the game's music function, which
  * rewrites the file name of the song the game is about to play and picks at

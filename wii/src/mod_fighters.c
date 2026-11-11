@@ -1,4 +1,4 @@
-/* 20XX's custom shield colours in the plain game and Slippi Online
+/* 20XX's custom shield colours in Slippi Online
  * (mod_values.c).
  *
  * A player's shield has the colour of its port: four colours (and a grey

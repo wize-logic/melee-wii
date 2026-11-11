@@ -113,9 +113,10 @@ static void load_cheats(void)
     WL_LOG_I("launcher", "cheats: no codes/GALE01.gct");
 }
 
-/* 20XX's menu, music and stage looks in the plain game and Slippi Online
- * (mod_values.c), from the player's own 20XX image: the one last played, or
- * the first there is. `progress`: the launcher's screen, while it checks the
+/* 20XX's menu, music and stage looks in Slippi Online (mod_values.c), from
+ * the player's own 20XX image: the one last played, or the first there is.
+ * Slippi Online only: Melee itself is started as the disc has it, and a mod
+ * is its own game. `progress`: the launcher's screen, while it checks the
  * image's stage files (the first time). Once: the screen calls it as it
  * leaves, and melee_wii_launch when the screen was skipped. */
 void launcher_mod_start(const LauncherSettings* s, void (*progress)(const char* name, int done, int total))
@@ -125,7 +126,7 @@ void launcher_mod_start(const LauncherSettings* s, void (*progress)(const char* 
     static int started;
     ModDisc mods[4];
     int n, pick = -1, res;
-    if (started || !s->xx_menu || s->mode == LAUNCH_MOD) {
+    if (started || !s->xx_menu || s->mode != LAUNCH_ONLINE) {
         return;
     }
     started = 1;

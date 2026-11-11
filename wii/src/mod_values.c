@@ -1,4 +1,4 @@
-/* 20XX's extras in the plain game and Slippi Online, for a player who has a
+/* 20XX's extras in Slippi Online, for a player who has a
  * 20XX image (the launcher's "20XX menu" setting; the plan is
  * wii/docs/20xx.md): the image, and the player's values.
  *
@@ -226,7 +226,7 @@ int melee_wii_mod_save(void)
     size_t n = 0;
     WlResult r;
 #define PUT(...) (n += (size_t) snprintf(s_text + n, n < sizeof(s_text) ? sizeof(s_text) - n : 0, __VA_ARGS__))
-    PUT("# 20XX's options in Melee and Slippi Online (wii/README.md)\n");
+    PUT("# 20XX's options in Slippi Online (wii/README.md)\n");
     for (u32 g = 0; g < GROUP_COUNT; g++) {
         const struct Group* group = &GROUPS[g];
         if (group->key == NULL) {

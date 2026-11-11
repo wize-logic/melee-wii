@@ -1,4 +1,4 @@
-/* 20XX's extras in the plain game and Slippi Online (mod_values.c): the
+/* 20XX's extras in Slippi Online (mod_values.c): the
  * addresses of 20XX's variables the port acts on (1.02), and the parts. */
 #ifndef MELEE_WII_MOD_VALUES_H
 #define MELEE_WII_MOD_VALUES_H

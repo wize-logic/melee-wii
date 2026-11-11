@@ -30,7 +30,7 @@ are in this repository or in a release.
 | Replays | Every game, online and offline VS, as a `.slp` file |
 | Console mirroring | Slippi Launcher can connect to the Wii to watch, record or relay games |
 | Slippi's offline codes | UCF 0.84, PAL balance, Stealth/Tournament/Friendlies, frozen stages, ledge grab and wobbling limits, widescreen, safety |
-| 20XX | 20XX Hack Pack (or another 1.02 mod) from its own disc image; part of its menu in the plain game and Slippi Online |
+| 20XX | 20XX Hack Pack (or another 1.02 mod) from its own disc image; part of its menu in Slippi Online |
 | Cheats | Your own Gecko codes, offline |
 | Controllers | GameCube controllers; Classic Controllers on Wiis without GameCube ports |
 
@@ -102,7 +102,7 @@ Kept in `sd:/apps/melee/settings.ini`.
 | Console mirroring | On, Off | |
 | Skip this screen | Off, On | Starts the last choice at once. Hold B as it starts to get the launcher back: on a GameCube controller, or with none plugged in, 1 or B on a Wii Remote (b on its Classic Controller) |
 | Diagnostics | Off, On | Records each online game's timing: [docs/netplay.md](docs/netplay.md#diagnostics) |
-| 20XX menu | Off, On | Shown with a 20XX image: see [20XX](#20xx) |
+| 20XX menu | Off, On | Slippi Online only. Shown with a 20XX image: see [20XX](#20xx) |
 
 Offline, Replays and Console mirroring bring Slippi's core codes, which record the games and start
 at the VS character select screen, as Slippi Nintendont does.
@@ -152,17 +152,15 @@ keeps its own saves. Any other 1.02 mod is listed as **Modded Melee**. Up to fou
 20XX's own widescreen follows the launcher's Screen setting, and its lag reduction ("Are you
 using HDMI?") works. Tested with 20XX 5.0.2.
 
-### 20XX's menu in Melee and Slippi Online
+### 20XX's menu in Slippi Online
 
 To turn it on: with a 20XX image on the card, open the launcher's **Settings** (X; + on a Wii
 Remote) and set **20XX menu** to On. It is off by default, and listed only while a 20XX image is
-found.
+found. It is Slippi Online's alone: Melee is never given it.
 
 It gives the part of 20XX's debug menu that changes only sound or picture, with your image's songs
-and files:
-
-- **Slippi Online:** **Extra** on the Online Play screen, under Party.
-- **Melee:** **Y** on the main menu's first screen (Y opens it from the Online Play screen too).
+and files. **Extra** on the Online Play screen, under Party, opens it (and Y, there or on the main
+menu's first screen).
 
 The stick or D-pad moves, A opens or plays, B goes back, Start leaves.
 
@@ -172,7 +170,7 @@ The stick or D-pad moves, A opens or plays, B goes back, Start leaves.
 | Stage textures | 20XX's looks for Battlefield, Final Destination, Yoshi's Story, Fountain of Dreams, Dream Land and Pokémon Stadium, or a random one each match |
 | Stage colors | Final Destination's custom colour |
 | Shield colors | Each player's shield colour. Online, the first is yours |
-| 20XX costumes | L and R on the character select screen give your character its costume's two others. Online, only your own character wears one |
+| 20XX costumes | L and R on the character select screen give your character its costume's two others. Only your own character wears one |
 
 Nothing else of 20XX's menu is there: the rest changes the game, and an opponent on plain Slippi
 must be playing the same match. For the same reason none of 20XX's code runs, and a stage look or

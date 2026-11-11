@@ -1,4 +1,4 @@
-/* 20XX's menu in the plain game and Slippi Online (mod_values.c): Y on the
+/* 20XX's menu in Slippi Online (mod_values.c): Y on the
  * main menu opens it.
  *
  * 20XX's menu is the game's own debug menu (if/textlib_1.c: lists of 32-byte

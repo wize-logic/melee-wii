@@ -1,4 +1,4 @@
-/* 20XX's stage looks in the plain game and Slippi Online (mod_values.c).
+/* 20XX's stage looks in Slippi Online (mod_values.c).
  *
  * In 20XX a look is a whole stage file, chosen by its name's last letters
  * (GrNBa.3at for Battlefield's third). Here the game is given that file when

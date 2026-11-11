@@ -488,8 +488,7 @@ static void settings(LauncherSettings* s)
           "/apps/melee/logs/diag (the newest 40 kept)." },
         /* only with a 20XX image */
         { "20XX", "20XX menu", ON_OFF, 2, &s->xx_menu,
-          "Y on the main menu opens 20XX's music and stage looks, from your 20XX image. Nothing "
-          "that changes a match.", NEED_20XX },
+          "20XX's music and looks in Slippi Online, under Extra.", NEED_20XX },
     };
     const int nrows = (int) (sizeof(rows) / sizeof(rows[0]));
     int vis[sizeof(rows) / sizeof(rows[0])];

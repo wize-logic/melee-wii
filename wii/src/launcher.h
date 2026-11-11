@@ -30,7 +30,7 @@ typedef struct LauncherSettings {
     int cheats;  /* the player's Gecko codes (codes/GALE01.gct), offline */
     int replays; /* a .slp of each game (Slippi's recording; offline too) */
     int console; /* Slippi Launcher's console mirroring (TCP 51441) */
-    int xx_menu; /* 20XX's menu in Melee and Slippi Online, from a 20XX image (mod_values.c) */
+    int xx_menu; /* 20XX's menu in Slippi Online, from a 20XX image (mod_values.c) */
     int diagnostics; /* a record of each online game's timing in logs/diag (slippi/so_gamelog.c) */
     char mod_path[160]; /* LAUNCH_MOD: the modded image (20XX), launcher/mods.c */
 } LauncherSettings;

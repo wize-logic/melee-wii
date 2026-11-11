@@ -220,11 +220,16 @@ void melee_wii_launch(void)
                         "Slippi Launcher into %s on the SD card.", LAUNCHER_SLIPPI);
     }
     WL_LOG_I("launcher", "starting %s", so.online ? "Slippi Online" : "Melee");
+    /* (the screen was skipped: before Slippi Online's start, as the screen
+     * does it. Its reading takes a few MB of MEM2 for a moment; taken after
+     * Slippi's own they left a hole below what stays, and with console
+     * mirroring's 2.5 MB no 16 MiB was left in one piece for the game's
+     * ARAM) */
+    launcher_mod_start(&s, NULL);
     res = so_wii_start(&so);
     if (res < 0) {
         melee_wii_fatal("Slippi Online did not start (%d).", res);
     }
-    launcher_mod_start(&s, NULL);
     if (so.online) {
         /* (mod_menu.c: "Extra" on Slippi's Online Play screen, for 20XX's menu) */
         void melee_wii_menu_extra(void);

@@ -35,7 +35,13 @@ typedef struct lbArqGlobal {
 #endif
 static lbArqState lbArq_80014ABC(lbArqNode* arg0)
 {
+#ifdef __MWERKS__
     return arg0->state;
+#else
+    /* Set by the ARQ callback, in interrupt context: other compilers would
+     * read it once and spin on that */
+    return *(volatile lbArqState*) &arg0->state;
+#endif
 }
 #ifdef __MWERKS__
 #pragma pop

@@ -11,12 +11,15 @@ struct DebugContext {
 
 static ReportCallback reportCallback;
 static PanicCallback panicCallback;
+#ifndef TARGET_WII
 static __io_proc logFunc;
+#endif
 
 #ifdef MUST_MATCH
 #pragma peephole off
 #endif
 
+#ifndef TARGET_WII
 static int report_func(__file_handle arg0, unsigned char* arg1, size_t* arg2,
                        __idle_proc arg3)
 {
@@ -35,6 +38,10 @@ void HSD_LogInit(void)
     stdout->write_proc = report_func;
     stdout->state.error = 0;
 }
+#else
+/* newlib's stdout has no write_proc to wrap: the port's OSReport is the log */
+void HSD_LogInit(void) {}
+#endif
 
 void __assert(const char* str, u32 arg1, const char* arg2)
 {

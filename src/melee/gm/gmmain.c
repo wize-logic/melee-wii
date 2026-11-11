@@ -122,7 +122,7 @@ static void init_spr_unk(void)
 #endif
 }
 
-#ifdef __GNUC__
+#if defined(__GNUC__) && !defined(TARGET_WII)
 /// stub function auto-called from main to set up EABI environment
 void __eabi(void) {}
 #endif

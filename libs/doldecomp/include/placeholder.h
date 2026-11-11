@@ -9,7 +9,12 @@ typedef void (*jmp_t)(void);
 /// A jump table
 typedef jmp_t jtbl_t[];
 
-#ifndef MWERKS_GEKKO
+#if defined(TARGET_WII) && !defined(MWERKS_GEKKO)
+/* The Wii build has the CPU's own instructions for them */
+#include <melee_wii/gekko.h>
+#define sqrtf__Ff(x) melee_sqrtf(x)
+#define sqrtf_accurate(x) melee_sqrtf_accurate(x)
+#elif !defined(MWERKS_GEKKO)
 /* Reciprocal sqrt estimate; callers Newton-refine it as 1/sqrt. */
 #define __frsqrte(x) (1.0 / sqrt(x))
 #define sqrtf__Ff(x) sqrtf(x)

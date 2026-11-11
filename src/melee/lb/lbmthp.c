@@ -441,7 +441,13 @@ s32 fn_8001F13C(THPDecComp* streamPlayer)
 #endif
 s32 fn_8001F294(void)
 {
+#ifdef __MWERKS__
     return MoviePlayer.unk_110;
+#else
+    /* Cleared by the DVD callbacks, in interrupt context: other compilers
+     * would read it once and spin on that */
+    return *(volatile s32*) &MoviePlayer.unk_110;
+#endif
 }
 #ifdef __MWERKS__
 #pragma pop

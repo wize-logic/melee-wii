@@ -2166,6 +2166,20 @@ void _tyDisplay_8031BA78(s32 arg0, s32 arg1, f32 farg0)
     },
 };
 
+/// The three name tables above are one block in the DOL. For compilers other
+/// than MWCC a read past the first one's end is undefined, and they fold it to
+/// zero: the pointer to the block is hidden from them.
+#ifdef __MWERKS__
+#define TY_DSP_NAME_TABLES(p) (p)
+#else
+static inline TyDspNameTables const* tyDisplay_NameTables(TyDspNameTables const* p)
+{
+    __asm__("" : "+r"(p));
+    return p;
+}
+#define TY_DSP_NAME_TABLES(p) tyDisplay_NameTables(p)
+#endif
+
 s32 tyDisplay_8031BB34(s8 idx)
 {
     TyDspArchNames table = _tyDisplay_803B8988;
@@ -2407,7 +2421,7 @@ s32 tyDisplay_8031C454(s32 arg0)
     const TyDspNameTables* tables;
 
     PAD_STACK(0x4);
-    tables = (TyDspNameTables const*) &_tyDisplay_803B8988;
+    tables = TY_DSP_NAME_TABLES((TyDspNameTables const*) &_tyDisplay_803B8988);
     result = 0;
     archArr = _tyDisplay_804A2DE8;
 
@@ -2468,7 +2482,7 @@ HSD_JObj* tyDisplay_8031C5E4(s32 arg0)
     HSD_JObj* child;
     u8 cat;
     const TyDspNameTables* tables =
-        (TyDspNameTables const*) &_tyDisplay_803B8988;
+        TY_DSP_NAME_TABLES((TyDspNameTables const*) &_tyDisplay_803B8988);
 
     HSD_Archive** archives = _tyDisplay_804A2DE8;
     u8 _3[4];

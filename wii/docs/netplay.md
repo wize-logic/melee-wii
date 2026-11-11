@@ -171,10 +171,11 @@ Nintendo's Wii LAN Adapter, or a third-party one with that chip.
 `wii/src/wifi.c` does what the Revolution SDK's network libraries do, without them.
 
 - **Roaming is turned off.** The Wi-Fi driver scans for a better access point about every 10 s
-  while connected, and each scan stops the link for some 150 ms (a 5- to 7-frame rollback). The
-  port sets the driver's `roam_off` through `/dev/wl0` when the network comes up, and checks it
-  again after every match (the driver turns roaming back on when it reconnects). If roaming can't
-  be turned off, the game stops with a message and returns to the Homebrew Channel.
+  while connected, and each scan stops the link for some 150 ms (a 5- to 7-frame rollback). In
+  Slippi Online on Wi-Fi the port sets the driver's `roam_off` through `/dev/wl0` when the network
+  comes up, and checks it again after every match (the driver turns roaming back on when it
+  reconnects). If roaming can't be turned off, the game stops with a message and returns to the
+  Homebrew Channel. Offline, and on a wired connection, the driver is left alone.
 - **WiiConnect24** is paused while the game runs, as the SDK's `NWC24SuspendScheduler` does, and
   resumed as it leaves. The log says whether it was running.
 - **Rates and retries** are left to the Wi-Fi module, as Wii Settings saves them. Two `config.ini`

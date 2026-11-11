@@ -153,8 +153,12 @@ static u32 NetUpThread(void* unused)
      * so re-check it here on this (background) thread, never in the netplay
      * loop. If roaming is ever on and cannot be turned off, stop with an error
      * and send the player back to the Homebrew Channel rather than play with it
-     * on. A wired link (guard returns -1) has nothing to do. */
-    if (melee_wii_wifi_roam_guard == NULL) {
+     * on. A wired link (guard returns -1) has nothing to do.
+     *
+     * For netplay on Wi-Fi only (so_socket_set_wifi, which the online client
+     * alone calls): an offline game brings the network up too, for console
+     * mirroring, and is not to be stopped, nor the driver touched, for it. */
+    if (melee_wii_wifi_roam_guard == NULL || !s_wifi_known || !s_wifi) {
         return 0;
     }
     {

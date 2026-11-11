@@ -101,7 +101,7 @@ Kept in `sd:/apps/melee/settings.ini`.
 | Cheats | Off, On | Offline: see [Cheats](#cheats) |
 | Replays | On, Off | |
 | Console mirroring | On, Off | |
-| Skip this screen | Off, On | Starts the last choice at once. Hold B on a GameCube controller as it starts to get the launcher back |
+| Skip this screen | Off, On | Starts the last choice at once. Hold B as it starts to get the launcher back: on a GameCube controller, or with none plugged in, 1 or B on a Wii Remote (b on its Classic Controller) |
 | Diagnostics | Off, On | Records each online game's timing: [docs/netplay.md](docs/netplay.md#diagnostics) |
 | 20XX menu | Off, On | Shown with a 20XX image: see [20XX](#20xx) |
 
@@ -217,7 +217,8 @@ All under `sd:/apps/melee/`.
   whether it is there.
 - **A crash** is shown on the screen and written to `logs/log.txt`: where, the registers, the
   calls. A game that stops (no new frame for 5 s) is logged with what it waits in.
-- **Skip this screen is on and there is no GameCube controller:** set `skip=0` in `settings.ini`.
+- **Skip this screen is on and the launcher won't come back:** hold B from before the program
+  starts, or set `skip=0` in `settings.ini`.
 - **Online games run badly:** turn Diagnostics on, play, and read the records with
   `wii/tools/gamelog.py` ([docs/netplay.md](docs/netplay.md#diagnostics)).
 

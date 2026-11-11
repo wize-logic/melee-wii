@@ -481,8 +481,8 @@ static void settings(LauncherSettings* s)
           "Slippi Launcher can connect to this Wii (Console Mirroring) to watch, record or relay "
           "games." },
         { "Launcher", "Skip this screen", ON_OFF, 2, &s->skip,
-          "Start the last choice at once. Hold B on a GameCube controller as the game starts for "
-          "this screen." },
+          "Start the last choice at once. Hold B as the game starts for this screen (on a Wii "
+          "Remote, 1 or B, when no GameCube controller is plugged in)." },
         { NULL, "Diagnostics", ON_OFF, 2, &s->diagnostics,
           "For finding what makes online games run badly: each one's timing, saved in "
           "/apps/melee/logs/diag (the newest 40 kept)." },
@@ -680,12 +680,15 @@ static void game_info(void)
 /* ---- the launcher -------------------------------------------------------- */
 
 /* With "skip this screen": B held on a GameCube controller (looked at for a
- * moment, no screen yet) shows it all the same */
+ * moment, no screen yet) shows it all the same. With no GameCube controller
+ * plugged in (a Wii without the ports), a Wii Remote's or its Classic
+ * Controller's B does (input_remote_b_held). */
 static int b_held(void)
 {
+    u32 connected = 0;
     PAD_Init();
     for (int i = 0; i < 20; i++) {
-        PAD_ScanPads();
+        connected |= PAD_ScanPads();
         for (int c = 0; c < 4; c++) {
             if (PAD_ButtonsHeld(c) & PAD_BUTTON_B) {
                 return 1;
@@ -693,7 +696,7 @@ static int b_held(void)
         }
         usleep(16000);
     }
-    return 0;
+    return connected == 0 && input_remote_b_held();
 }
 
 /* One prerequisite on the Help page: its name, whether it is met, and how to

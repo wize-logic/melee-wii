@@ -23,6 +23,9 @@ void input_hand_over(void);
 /* What was pressed since the last call (directions repeat); call once a frame */
 unsigned int input_poll(void);
 unsigned int input_held(void);
+/* Before input_init, with no screen yet: is 1 or B held on a Wii Remote, or
+ * b on its Classic Controller? Waits for a Remote to connect (up to 3 s) */
+int input_remote_b_held(void);
 /* The Wii Remote's pointer (640x480), when one points at the screen */
 int input_pointer(int* x, int* y);
 

@@ -6,6 +6,7 @@
 #include "input.h"
 
 #include <gccore.h>
+#include <unistd.h>
 #include <wiiuse/wpad.h>
 
 #define REPEAT_FIRST 22 /* frames before a held direction repeats */
@@ -24,6 +25,37 @@ void input_init(void)
         WPAD_SetDataFormat(WPAD_CHAN_ALL, WPAD_FMT_BTNS_ACC_IR);
         WPAD_SetVRes(WPAD_CHAN_ALL, 640, 480);
     }
+}
+
+/* "Skip this screen" on a Wii with no GameCube controller (ui.c's b_held):
+ * a Wii Remote's 1 or B, or its Classic Controller's b, held as the program
+ * starts. A Remote takes a moment to connect once a button wakes it: up to
+ * 3 s for one to come, then half a second for the button (a Classic
+ * Controller is known a little after its Remote). The Remotes stay
+ * connected, as after the launcher (input_hand_over). */
+int input_remote_b_held(void)
+{
+    int since = 0;
+    if (WPAD_Init() != WPAD_ERR_NONE) {
+        return 0;
+    }
+    for (int i = 0; i < 190 && since < 30; i++) {
+        int any = 0;
+        WPAD_ScanPads();
+        for (int c = 0; c < 4; c++) {
+            u32 type;
+            if (WPAD_Probe(c, &type) != WPAD_ERR_NONE) {
+                continue;
+            }
+            any = 1;
+            if (WPAD_ButtonsHeld(c) & (WPAD_BUTTON_1 | WPAD_BUTTON_B | WPAD_CLASSIC_BUTTON_B)) {
+                return 1;
+            }
+        }
+        since += any || since > 0;
+        usleep(16000);
+    }
+    return 0;
 }
 
 /* Where the first Wii Remote that points at the screen points (640x480; the

@@ -19,7 +19,7 @@ enum { LAUNCH_MELEE, LAUNCH_ONLINE, LAUNCH_MOD };
  * select screen writes rumble.txt too. */
 typedef struct LauncherSettings {
     int mode;           /* LAUNCH_* */
-    int skip;           /* start the last mode at once (hold B for the menu) */
+    int skip;           /* start the last mode at once (hold B for the menu: ui.c) */
     int controller_fix; /* SO_WII_FIX_* (so_wii.h): the rest, offline */
     int pal;
     int mods;

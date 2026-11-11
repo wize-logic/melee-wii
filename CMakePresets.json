@@ -61,6 +61,19 @@
           "value": true
         }
       }
+    },
+    {
+      "name": "wii",
+      "displayName": "Wii",
+      "description": "Wii homebrew build with devkitPPC, libogc and wiilib",
+      "inherits": [
+        "base"
+      ],
+      "toolchainFile": "$env{DEVKITPRO}/cmake/Wii.cmake",
+      "environment": {
+        "DEVKITPRO": "/opt/devkitpro",
+        "DEVKITPPC": "/opt/devkitpro/devkitPPC"
+      }
     }
   ],
   "buildPresets": [
@@ -75,6 +88,10 @@
     {
       "name": "dat",
       "configurePreset": "dat"
+    },
+    {
+      "name": "wii",
+      "configurePreset": "wii"
     }
   ]
 }

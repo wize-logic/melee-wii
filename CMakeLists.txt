@@ -10,6 +10,11 @@ endif()
 
 project(melee LANGUAGES C)
 
+if(CMAKE_SYSTEM_NAME STREQUAL "NintendoWii")
+    include(cmake/Wii.cmake)
+    return()
+endif()
+
 include(GNUInstallDirs)
 
 option(MELEE_DAT_READERS "Build generated archive readers with the native game" OFF)

@@ -402,6 +402,118 @@ L_0000090C:
     // clang-format on
 }
 
+#ifndef __MWERKS__
+/* HandleReverb in C, for compilers without MWCC's assembly: the same
+ * computation, sample by sample, as the assembly above */
+static inline long AXFXReverbOut(float v)
+{
+    if (v >= 2147483647.0f) {
+        return 0x7FFFFFFF;
+    }
+    if (v <= -2147483648.0f) {
+        return (long) 0x80000000;
+    }
+    return (long) v; /* fctiwz */
+}
+
+static void HandleReverb(long* sptr, struct AXFX_REVSTD_WORK* rv)
+{
+    float allPass = rv->allPassCoeff;
+    float damping = rv->damping;
+    float wet = rv->level * value0_6;
+    float dry = value0_6 - wet;
+    long k;
+    long i;
+
+    for (k = 0; k < 3; k++) {
+        struct AXFX_REVSTD_DELAYLINE* c0 = &rv->C[k * 2];
+        struct AXFX_REVSTD_DELAYLINE* c1 = &rv->C[k * 2 + 1];
+        struct AXFX_REVSTD_DELAYLINE* ap0 = &rv->AP[k * 2];
+        struct AXFX_REVSTD_DELAYLINE* ap1 = &rv->AP[k * 2 + 1];
+        float coef0 = rv->combCoef[k * 2];
+        float coef1 = rv->combCoef[k * 2 + 1];
+        float lp = rv->lpLastout[k];
+        float* line = rv->preDelayLine[k];
+        float* ptr = rv->preDelayPtr[k];
+        float* last = line + (rv->preDelayTime - 1);
+        long* s = sptr + k * 160;
+
+        for (i = 0; i < 160; i++) {
+            float x = (float) s[i];
+            float in = x;
+            float t;
+            float a;
+
+            if (rv->preDelayTime != 0) {
+                in = *ptr;
+                *ptr++ = x;
+                if (ptr == last) {
+                    ptr = line;
+                }
+            }
+
+            /* two combs in parallel */
+            c0->inputs[c0->inPoint / 4] = coef0 * c0->lastOutput + in;
+            c1->inputs[c1->inPoint / 4] = coef1 * c1->lastOutput + in;
+            c0->inPoint += 4;
+            c1->inPoint += 4;
+            c0->lastOutput = c0->inputs[c0->outPoint / 4];
+            c1->lastOutput = c1->inputs[c1->outPoint / 4];
+            c0->outPoint += 4;
+            c1->outPoint += 4;
+            if (c0->inPoint == c0->length) {
+                c0->inPoint = 0;
+            }
+            if (c0->outPoint == c0->length) {
+                c0->outPoint = 0;
+            }
+            if (c1->inPoint == c1->length) {
+                c1->inPoint = 0;
+            }
+            if (c1->outPoint == c1->length) {
+                c1->outPoint = 0;
+            }
+            t = c0->lastOutput + c1->lastOutput;
+
+            /* all-pass */
+            a = allPass * ap0->lastOutput + t;
+            ap0->inputs[ap0->inPoint / 4] = a;
+            t = ap0->lastOutput - allPass * a;
+            ap0->lastOutput = ap0->inputs[ap0->outPoint / 4];
+            ap0->inPoint += 4;
+            ap0->outPoint += 4;
+            if (ap0->inPoint == ap0->length) {
+                ap0->inPoint = 0;
+            }
+            if (ap0->outPoint == ap0->length) {
+                ap0->outPoint = 0;
+            }
+
+            /* damping, then all-pass */
+            t = damping * lp + t * value0_3;
+            lp = t;
+            a = allPass * ap1->lastOutput + t;
+            ap1->inputs[ap1->inPoint / 4] = a;
+            t = ap1->lastOutput - allPass * a;
+            ap1->lastOutput = ap1->inputs[ap1->outPoint / 4];
+            ap1->inPoint += 4;
+            ap1->outPoint += 4;
+            if (ap1->inPoint == ap1->length) {
+                ap1->inPoint = 0;
+            }
+            if (ap1->outPoint == ap1->length) {
+                ap1->outPoint = 0;
+            }
+
+            s[i] = AXFXReverbOut(wet * t + dry * x);
+        }
+
+        rv->lpLastout[k] = lp;
+        rv->preDelayPtr[k] = ptr;
+    }
+}
+#endif
+
 static void ReverbSTDCallback(long* left, long* right, long* surround,
                               struct AXFX_REVSTD_WORK* rv)
 {

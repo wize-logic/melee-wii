@@ -390,6 +390,104 @@ L_00000344:
     // clang-format on
 }
 
+#ifndef __MWERKS__
+/* do_src1 and do_src2 in C, for compilers without MWCC's assembly: the same
+ * computation as the assembly above. 160 output samples from the delay line,
+ * a 4-tap polyphase interpolation (rsmpTab12khz: 128 phases), the position a
+ * 32.32 fixed-point number; do_src1 steps at most one input sample per
+ * output, do_src2 one or two. */
+static inline long AXFXChorusOut(float v)
+{
+    if (v >= 2147483647.0f) {
+        return 0x7FFFFFFF;
+    }
+    if (v <= -2147483648.0f) {
+        return (long) 0x80000000;
+    }
+    return (long) v; /* fctiwz */
+}
+
+static void do_src(struct AXFX_CHORUS_SRCINFO* src, int fast)
+{
+    u32 posLo = src->posLo;
+    u32 posHi = src->posHi;
+    u32 pitchLo = src->pitchLo;
+    u32 trigger = src->trigger;
+    u32 target = src->target;
+    long* smpBase = src->smpBase;
+    long* dest = src->dest;
+    long* old = src->old;
+    float f1 = (float) old[0];
+    float f2 = (float) old[1];
+    float f3 = (float) old[2];
+    float f4 = (float) smpBase[posHi];
+    int i;
+
+    for (i = 0; i < 160; i++) {
+        const f32* tab = &rsmpTab12khz[((posLo >> 25) & 0x7F) * 4];
+        u32 next = posLo + pitchLo;
+        int carry = next < posLo;
+        float out = f1 * tab[0] + f2 * tab[1] + f3 * tab[2] + f4 * tab[3];
+        posLo = next;
+        *dest++ = AXFXChorusOut(out);
+
+        if (!fast) {
+            if (!carry) {
+                continue;
+            }
+            posHi++;
+            if (posHi == trigger) {
+                posHi = target;
+            }
+            f1 = f2;
+            f2 = f3;
+            f3 = f4;
+            f4 = (float) smpBase[posHi];
+        } else if (!carry) {
+            posHi++;
+            if (posHi == trigger) {
+                posHi = target;
+            }
+            f1 = f2;
+            f2 = f3;
+            f3 = f4;
+            f4 = (float) smpBase[posHi];
+        } else {
+            float s;
+            posHi++;
+            if (posHi == trigger) {
+                posHi = target;
+            }
+            s = (float) smpBase[posHi];
+            posHi++;
+            if (posHi == trigger) {
+                posHi = target;
+            }
+            f1 = f3;
+            f2 = f4;
+            f3 = s;
+            f4 = (float) smpBase[posHi];
+        }
+    }
+
+    old[0] = AXFXChorusOut(f1);
+    old[1] = AXFXChorusOut(f2);
+    old[2] = AXFXChorusOut(f3);
+    src->posLo = posLo;
+    src->posHi = posHi;
+}
+
+static void do_src1(struct AXFX_CHORUS_SRCINFO* src)
+{
+    do_src(src, 0);
+}
+
+static void do_src2(struct AXFX_CHORUS_SRCINFO* src)
+{
+    do_src(src, 1);
+}
+#endif
+
 int AXFXChorusInit(struct AXFX_CHORUS* c)
 {
     long* left;

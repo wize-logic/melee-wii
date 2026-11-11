@@ -15,10 +15,20 @@ volatile u32 __AIRegs[8] : 0xCC006C00;
 #define __PIRegs ((volatile u32*) 0xCC003000)
 #define __MEMRegs ((volatile u16*) 0xCC004000)
 #define __DSPRegs ((volatile u16*) 0xCC005000)
+#if defined(TARGET_WII)
+/* In Wii mode the disc, serial, EXI and audio interfaces answer only at
+ * Hollywood's addresses (as libogc reaches them); their GameCube ones
+ * (0xCC006000) do in GameCube mode alone */
+#define __DIRegs ((volatile u32*) 0xCD006000)
+#define __SIRegs ((volatile u32*) 0xCD006400)
+#define __EXIRegs ((volatile u32*) 0xCD006800)
+#define __AIRegs ((volatile u32*) 0xCD006C00)
+#else
 #define __DIRegs ((volatile u32*) 0xCC006000)
 #define __SIRegs ((volatile u32*) 0xCC006400)
 #define __EXIRegs ((volatile u32*) 0xCC006800)
 #define __AIRegs ((volatile u32*) 0xCC006C00)
+#endif
 #endif
 
 // Offsets for __VIRegs

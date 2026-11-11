@@ -4,7 +4,7 @@
 #include <dolphin/ax.h>
 
 static u16 __AXHRTFHistory[128];
-static u16 __AXCommandList[2][384];
+static u16 __AXCommandList[2][384] AX_DMA_ALIGN;
 
 static u32 __AXCommandListPosition;
 static u16* __AXClWrite;

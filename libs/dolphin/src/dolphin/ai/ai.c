@@ -56,7 +56,13 @@ void AIInitDMA(u32 start_addr, u32 length)
     BOOL old;
 
     old = OSDisableInterrupts();
+#if defined(TARGET_WII)
+    /* a Wii's address field is 13 bits (MEM2's addresses): nothing of an
+     * earlier DMA's (a program before, in MEM2) left in it */
+    __DSPRegs[24] = (__DSPRegs[24] & 0xFFFFE000) | (start_addr >> 16);
+#else
     __DSPRegs[24] = (__DSPRegs[24] & 0xFFFFFC00) | (start_addr >> 16);
+#endif
     __DSPRegs[25] = (__DSPRegs[25] & 0xFFFF001F) | (start_addr & 0xFFFF);
     ASSERTMSGLINE(0x12E, (length & 0x1F) == 0,
                   "AIStartDMA: length must be multiple of 32 bytes");
@@ -366,6 +372,14 @@ static asm void __AICallbackStackSwitch(register void* cb)
     blr
     // clang-format on
 }
+
+#ifndef __MWERKS__
+/* For compilers without MWCC's assembly: the callback on the caller's stack */
+static void __AICallbackStackSwitch(void* cb)
+{
+    ((void (*)(void)) cb)();
+}
+#endif
 
 void __AI_SRC_INIT(void)
 {

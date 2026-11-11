@@ -3,6 +3,15 @@
 
 #include <dolphin/ax.h>
 
+// The output and command list buffers go on 32 bytes (the asserts in
+// __AXOutInit and __AXClInit): the AI's DMA drops an address's low five bits.
+// MWCC's link happens to put them there; other compilers have to be told.
+#ifdef __MWERKS__
+#define AX_DMA_ALIGN
+#else
+#define AX_DMA_ALIGN ATTRIBUTE_ALIGN(32)
+#endif
+
 // AXAlloc.c
 AXVPB* __AXGetStackHead(u32 priority);
 void __AXServiceCallbackStack(void);

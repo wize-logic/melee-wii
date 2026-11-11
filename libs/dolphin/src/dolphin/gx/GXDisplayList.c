@@ -38,7 +38,7 @@ void GXBeginDisplayList(void* list, u32 size)
     GXSetCPUFifo((GXFifoObj*) &DisplayListFifo);
 }
 
-unsigned long GXEndDisplayList(void)
+u32 GXEndDisplayList(void)
 {
     u32 ov;
     u32 reg;

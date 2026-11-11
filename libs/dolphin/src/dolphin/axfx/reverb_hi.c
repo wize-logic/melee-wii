@@ -612,6 +612,108 @@ L_00000C7C:
     // clang-format on
 }
 
+#ifndef __MWERKS__
+/* DoCrossTalk and HandleReverb in C, for compilers without MWCC's assembly:
+ * the same computation, sample by sample, as the assembly above */
+static inline long AXFXReverbHIOut(float v, int nearest)
+{
+    if (v >= 2147483647.0f) {
+        return 0x7FFFFFFF;
+    }
+    if (v <= -2147483648.0f) {
+        return (long) 0x80000000;
+    }
+    if (nearest) { /* fctiw */
+        return (long) (v >= 0.0f ? v + 0.5f : v - 0.5f);
+    }
+    return (long) v; /* fctiwz */
+}
+
+void DoCrossTalk(long* l, long* r, float cross, float invcross)
+{
+    long i;
+    for (i = 0; i < 160; i++) {
+        float L = (float) l[i];
+        float R = (float) r[i];
+        l[i] = AXFXReverbHIOut(L * invcross + R * cross, 1);
+        r[i] = AXFXReverbHIOut(L * (cross * value0_6) + R * (invcross * value0_6), 1);
+    }
+}
+
+static inline float AXFXRevHIAllPass(struct AXFX_REVHI_DELAYLINE* ap,
+                                     float allPass, float t)
+{
+    float a = allPass * ap->lastOutput + t;
+    ap->inputs[ap->inPoint / 4] = a;
+    t = ap->lastOutput - allPass * a;
+    ap->lastOutput = ap->inputs[ap->outPoint / 4];
+    ap->inPoint += 4;
+    ap->outPoint += 4;
+    if (ap->inPoint == ap->length) {
+        ap->inPoint = 0;
+    }
+    if (ap->outPoint == ap->length) {
+        ap->outPoint = 0;
+    }
+    return t;
+}
+
+static inline float AXFXRevHIComb(struct AXFX_REVHI_DELAYLINE* c, float coef,
+                                  float in)
+{
+    c->inputs[c->inPoint / 4] = coef * c->lastOutput + in;
+    c->inPoint += 4;
+    c->lastOutput = c->inputs[c->outPoint / 4];
+    c->outPoint += 4;
+    if (c->inPoint == c->length) {
+        c->inPoint = 0;
+    }
+    if (c->outPoint == c->length) {
+        c->outPoint = 0;
+    }
+    return c->lastOutput;
+}
+
+static void HandleReverb(long* sptr, struct AXFX_REVHI_WORK* rv, long k)
+{
+    float allPass = rv->allPassCoeff;
+    float damping = rv->damping;
+    float wet = rv->level * value0_6;
+    float dry = value0_6 - wet;
+    struct AXFX_REVHI_DELAYLINE* c = &rv->C[k * 3];
+    struct AXFX_REVHI_DELAYLINE* ap = &rv->AP[k * 3];
+    float* coef = &rv->combCoef[k * 3];
+    float lp = rv->lpLastout[k];
+    long i;
+
+    for (i = 0; i < 160; i++) {
+        float x = (float) sptr[i];
+        float in = x;
+        float t;
+
+        if (rv->preDelayTime != 0) {
+            /* The SDK's assembly stores the advanced pointer at the wrong
+             * address: preDelayPtr[k] never moves, and the pre-delay is of
+             * one sample. Kept so. */
+            float* ptr = rv->preDelayPtr[k];
+            in = *ptr;
+            *ptr = x;
+        }
+
+        t = AXFXRevHIComb(&c[0], coef[0], in);
+        t += AXFXRevHIComb(&c[1], coef[1], in);
+        t += AXFXRevHIComb(&c[2], coef[2], in);
+        t = AXFXRevHIAllPass(&ap[0], allPass, t);
+        t = AXFXRevHIAllPass(&ap[1], allPass, t);
+        t = damping * lp + t * value0_3;
+        lp = t;
+        t = AXFXRevHIAllPass(&ap[2], allPass, t);
+        sptr[i] = AXFXReverbHIOut(wet * t + dry * x, 0);
+    }
+    rv->lpLastout[k] = lp;
+}
+#endif
+
 static void ReverbHICallback(long* left, long* right, long* surround,
                              struct AXFX_REVHI_WORK* rv)
 {

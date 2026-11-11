@@ -63,8 +63,11 @@ Launcher on your PC: https://slippi.gg).
    Slippi Online. The first Slippi Online start makes Slippi's menus from your
    disc (a minute).
 
-Saves go to /apps/melee/card, replays to /apps/melee/slippi/replays, your
-cheats (offline) are /apps/melee/codes/GALE01.gct.
+Melee is the game as your disc has it (in widescreen on a Wii set to 16:9);
+Slippi's offline codes are in Settings, each off until you turn it on. Melee's saves go to /apps/melee/card (Slippi's
+to /apps/melee/cardslippi), replays to /apps/melee/slippi/replays, your cheats
+(offline) are /apps/melee/codes/GALE01.gct. HOME held on a Wii Remote leaves
+for the Homebrew Channel, as RESET does.
 """
 
 NOTICE = """Melee for the Wii {version} - Slippi's files in this folder

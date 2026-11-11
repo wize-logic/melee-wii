@@ -21,6 +21,7 @@
 #include <dolphin/card.h>
 #include <dolphin/dvd.h>
 #include <dolphin/os.h>
+#include <dolphin/pad.h>
 
 #include <wl/base/base.h>
 #include <wl/platform/platform.h>
@@ -28,11 +29,104 @@
 static const char* s_card_dir = "sd:/apps/melee/card";
 #define CARD_DIR s_card_dir
 
-/* The launcher (before the game's CARDInit): 20XX keeps its saves apart */
+/* The launcher (before the game's CARDInit): Slippi and 20XX keep their saves
+ * apart from Melee's */
 void melee_wii_card_dir(const char* dir)
 {
     s_card_dir = dir;
 }
+
+/* The launcher, for Slippi and a mod (20XX): a card without the game's save
+ * gets one without the game asking. Their codes unlock everything, so the
+ * question ("The Memory Card in Slot A has no saved Game Data. Create Game
+ * Data?") is Melee's alone. */
+static BOOL s_quiet_create;
+
+void melee_wii_card_quiet_create(int on)
+{
+    s_quiet_create = on != 0;
+}
+
+#ifdef MELEE_ORIG_CODE
+/* The game's memory card scene (gm/gmscmemcard.c), which the boot goes
+ * through: its state (enter_data, 0x80480DA8) and the calls of its the port
+ * takes over (cmake/Wii.cmake's --redirect).
+ *
+ * Without a save the scene shows message 10, the question, with Yes chosen
+ * (state 5); A there shows 11, "creating", and makes the save (state 6); then
+ * 12, "created", waits for A (state 7) and the scene ends as it does with a
+ * save. With melee_wii_card_quiet_create the port presses that A in states 5
+ * and 7, the three messages are not put up and A's sound is not played: the
+ * game makes its save by its own steps, and shows nothing. In those states
+ * the scene's look at Left and Right (which moves the choice in a window
+ * that is not there) is left out too. A step that fails shows its own
+ * message (13), and every other state (a damaged save, a full card) asks as
+ * it always did. */
+#define MEMCARD_HAS_CHOICE (*(volatile s32*) 0x80480DB8u) /* enter_data.unk10 */
+#define MEMCARD_STATE (*(volatile s32*) 0x80480DBCu)      /* enter_data.decision */
+#define MEMCARD_CHOICE (*(volatile u8*) 0x80480DC4u)      /* enter_data.unk1C: 0 is Yes */
+#define MEMCARD_STATE_CREATE 5
+#define MEMCARD_STATE_CREATING 6
+#define MEMCARD_STATE_CREATED 7
+#define MEMCARD_MSG_CREATE 10
+#define MEMCARD_MSG_CREATED 12
+
+u32 gm_801AEDC8(void);
+void gm_801AEE6C(int kind, int message, int lines);
+int gm_801AF0D4(void);
+void lbAudioAx_80024030(int sfx);
+
+static BOOL quiet_step(void)
+{
+    return s_quiet_create && ((MEMCARD_STATE == MEMCARD_STATE_CREATE && MEMCARD_CHOICE == 0) ||
+                              MEMCARD_STATE == MEMCARD_STATE_CREATED);
+}
+
+/* gm_Scene_MemCard_OnFrame's calls of gm_801AEDC8: the buttons pressed */
+u32 melee_wii_memcard_buttons(void)
+{
+    u32 buttons = gm_801AEDC8();
+    if (quiet_step()) {
+        buttons |= PAD_BUTTON_A;
+    }
+    return buttons;
+}
+
+/* The scene's calls of gm_801AEE6C: a message put up (kind 0), or a question
+ * with Yes and No (1, 2). What it sets beside the window is set here. */
+void melee_wii_memcard_message(int kind, int message, int lines)
+{
+    if (s_quiet_create && message >= MEMCARD_MSG_CREATE && message <= MEMCARD_MSG_CREATED) {
+        if (message == MEMCARD_MSG_CREATE) {
+            OSReport("CARD: no save on the card: the game makes one, unasked\n");
+        }
+        if (kind != 0) {
+            MEMCARD_CHOICE = 0;
+        }
+        MEMCARD_HAS_CHOICE = kind != 0;
+        return;
+    }
+    gm_801AEE6C(kind, message, lines);
+}
+
+/* gm_Scene_MemCard_OnFrame's calls of gm_801AF0D4: the card taken out or put
+ * in (nonzero: the scene starts over), and Left and Right on the question */
+int melee_wii_memcard_choice(void)
+{
+    if (s_quiet_create && MEMCARD_STATE >= MEMCARD_STATE_CREATE && MEMCARD_STATE <= MEMCARD_STATE_CREATED) {
+        return 0;
+    }
+    return gm_801AF0D4();
+}
+
+/* gm_Scene_MemCard_OnFrame's calls of lbAudioAx_80024030: A's sound */
+void melee_wii_memcard_sound(int sfx)
+{
+    if (!quiet_step()) {
+        lbAudioAx_80024030(sfx);
+    }
+}
+#endif
 /* A 251-block card (16 Mbit): 256 blocks of 8 KiB, five the system's */
 #define CARD_MEM_SIZE 16
 #define CARD_SECTOR_SIZE 8192

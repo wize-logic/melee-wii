@@ -316,6 +316,13 @@ if(MELEE_ORIG_CODE)
                 # 20XX's costumes: L and R on the character select screen
                 --redirect mnCharSel_CursorThink:mnCharSel_CostumeChange:melee_wii_css_costume
                 --redirect mnCharSel_Scene_OnFrame:lbDvd_80018254:melee_wii_css_preload
+                # the memory card scene's question (a card with no save), not
+                # asked in Slippi or a mod (wii/src/card.c)
+                --redirect gm_Scene_MemCard_OnFrame:gm_801AEDC8:melee_wii_memcard_buttons
+                --redirect gm_Scene_MemCard_OnFrame:gm_801AEE6C:melee_wii_memcard_message
+                --redirect gm_801AF250:gm_801AEE6C:melee_wii_memcard_message
+                --redirect gm_Scene_MemCard_OnFrame:gm_801AF0D4:melee_wii_memcard_choice
+                --redirect gm_Scene_MemCard_OnFrame:lbAudioAx_80024030:melee_wii_memcard_sound
                 # the boot's progressive scan question, answered by the Wii's
                 # own setting (wii/src/vi.c)
                 --redirect gm_801A4510:VIGetDTVStatus:melee_wii_boot_dtv_status

@@ -183,6 +183,12 @@ void melee_wii_launch(void)
         }
         WL_LOG_I("launcher", "starting %s (%s)", mods[i].title, mods[i].path);
         {
+            /* (card.c: a mod's save, in its own folder, made without the
+             * game asking) */
+            void melee_wii_card_quiet_create(int on);
+            melee_wii_card_quiet_create(1);
+        }
+        {
             /* (pad.c: 20XX's own widescreen for the Screen setting) */
             extern int melee_wii_mod_wide;
             melee_wii_mod_wide = s.screen == SO_WII_SCREEN_WIDE ||
@@ -214,6 +220,14 @@ void melee_wii_launch(void)
     so.safety = s.safety;
     so.replays = s.replays && (so.online || s.offline_record);
     so.console = s.console && (so.online || s.offline_record);
+    if (so.online || so.replays || so.console) {
+        /* Slippi's codes unlock everything: a save of their own, apart from
+         * Melee's, and made without the game asking (card.c) */
+        void melee_wii_card_dir(const char* dir);
+        void melee_wii_card_quiet_create(int on);
+        melee_wii_card_dir(LAUNCHER_DIR "/cardslippi");
+        melee_wii_card_quiet_create(1);
+    }
     so.diagnostics = s.diagnostics;
     if (so.online && so.diagnostics) {
         diagnostics_folder();

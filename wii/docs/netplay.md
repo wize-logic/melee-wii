@@ -198,6 +198,9 @@ Nintendo's Wii LAN Adapter, or a third-party one with that chip.
   (`offline_record=`, off by default): it brings Slippi's core codes into Melee, which record the
   games, start at the VS character select screen and unlock everything, as Slippi Nintendont
   does. Without it Melee runs none of Slippi's code.
+- **Saves.** Whatever runs Slippi's codes (Slippi Online, Melee with that setting) keeps its save
+  in `cardslippi/`, apart from Melee's `card/`, and makes it the first time without the game's
+  question.
 
 ## Diagnostics
 

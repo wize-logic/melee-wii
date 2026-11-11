@@ -113,6 +113,11 @@ none). **Record Melee's games** brings Slippi's core codes into it, as Slippi Ni
 record the games (for Replays and Console mirroring, whichever is on), start at the VS character
 select screen and unlock everything.
 
+**Saves.** Melee asks before it makes its save, as on a GameCube. Slippi Online, Melee with
+**Record Melee's games**, and 20XX or another mod never ask: their codes unlock everything, and
+each makes its save by itself the first time, in a folder of its own, so Melee's save is never
+written by them.
+
 With a component cable and the Wii set to 480p, the game boots in 480p without asking; B held at
 the start still asks.
 
@@ -214,7 +219,7 @@ All under `sd:/apps/melee/`.
 | `boot.dol`, `meta.xml`, `icon.png` | The program |
 | `game.iso` | Your disc image |
 | `settings.ini` | The launcher's settings |
-| `card/` | Saves, one `.gci` each (memory card slot A). A mod's are in `card20xx/` or `cardmod/` |
+| `card/` | Melee's saves, one `.gci` each (memory card slot A). Slippi's are in `cardslippi/`, a mod's in `card20xx/` or `cardmod/` |
 | `codes/GALE01.gct` | Your cheats |
 | `slippi/user.json` | Your Slippi account. Keep it private |
 | `slippi/netplay.gct`, `slippi/files/`, `slippi/patches/` | Slippi's online code, menu files and patches, from the release zip. The launcher makes the patched menus from your disc |

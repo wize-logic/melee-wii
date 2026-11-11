@@ -66,8 +66,11 @@ Launcher on your PC: https://slippi.gg).
 Melee is the game as your disc has it (in widescreen on a Wii set to 16:9);
 Slippi's offline codes are in Settings, each off until you turn it on. Melee's saves go to /apps/melee/card (Slippi's
 to /apps/melee/cardslippi), replays to /apps/melee/slippi/replays, your cheats
-(offline) are /apps/melee/codes/GALE01.gct. HOME held on a Wii Remote leaves
-for the Homebrew Channel, as RESET does.
+(offline) are /apps/melee/codes/GALE01.gct.
+
+To return to the Homebrew Channel: in the launcher, choose Exit (or press HOME
+on a Wii Remote). During a game, hold HOME on a Wii Remote or its Classic
+Controller for a second, or press the console's RESET button.
 """
 
 NOTICE = """Melee for the Wii {version} - Slippi's files in this folder

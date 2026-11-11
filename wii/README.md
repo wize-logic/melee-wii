@@ -64,6 +64,10 @@ and any disc other than NTSC 1.02.
    `user.json` is your login: keep it private.
 4. Start **Melee for the Wii** from the Homebrew Channel.
 
+To return to the Homebrew Channel: in the launcher, choose **Exit** (or press HOME on a Wii
+Remote). During a game, hold **HOME** on a Wii Remote or its Classic Controller for a second, or
+press the console's **RESET** button.
+
 The disc image is looked for as `/apps/melee/game.iso`, `/apps/melee/GALE01.iso`,
 `/games/GALE01.iso`, `/games/melee.iso` and `/melee.iso`, on the SD card and then on a USB drive.
 

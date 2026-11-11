@@ -259,7 +259,7 @@ static void draw_main(int focus_index, const SlippiStatus* st)
     char line[128];
     int x = left();
     int pitch = item_pitch(), h = pitch - 6;
-    snprintf(sub[ITEM_MELEE], sizeof(sub[0]), "Play Melee, with the codes chosen in Settings");
+    snprintf(sub[ITEM_MELEE], sizeof(sub[0]), "The original game");
     if (s_mod_count > 0) {
         const ModDisc* m = &s_mods[s_mod_pick];
         snprintf(sub[ITEM_MOD], sizeof(sub[0]), "%s%s  (%s)", s_mod_count > 1 ? "\xE2\x86\x90\xE2\x86\x92 " : "",
@@ -267,13 +267,13 @@ static void draw_main(int focus_index, const SlippiStatus* st)
     }
     /* (Wi-Fi plays again, 2026-11-10: no "Needs a wired (LAN) connection" here) */
     if (st->have_account) {
-        snprintf(sub[ITEM_ONLINE], sizeof(sub[0]), "Unranked, Direct and Teams as %s (%s)", st->name,
+        snprintf(sub[ITEM_ONLINE], sizeof(sub[0]), "Play online as %s (%s)", st->name,
                  st->code);
     } else {
-        snprintf(sub[ITEM_ONLINE], sizeof(sub[0]), "Needs your Slippi account: see Game info");
+        snprintf(sub[ITEM_ONLINE], sizeof(sub[0]), "Needs your Slippi account");
     }
-    snprintf(sub[ITEM_SETTINGS], sizeof(sub[0]), "Online rumble and delay, Slippi's codes, cheats, replays...");
-    snprintf(sub[ITEM_INFO], sizeof(sub[0]), "The disc image, its check, and Slippi's files");
+    snprintf(sub[ITEM_SETTINGS], sizeof(sub[0]), "Codes, replays and other options");
+    snprintf(sub[ITEM_INFO], sizeof(sub[0]), "Check your disc and files");
     snprintf(sub[ITEM_EXIT], sizeof(sub[0]), " ");
 
     background(NULL);
@@ -352,7 +352,7 @@ static void prepare_progress(const char* name, int done, int total, void* ctx)
     char what[96];
     (void) ctx;
     snprintf(what, sizeof(what), "%s  (%d of %d)", name, done < total ? done + 1 : done, total);
-    draw_progress("Making Slippi's menus from your disc", what, done, total);
+    draw_progress("Making Slippi's menus", what, done, total);
 }
 
 /* (launcher_mod_start) 20XX's stage files, checked the first time */
@@ -360,7 +360,7 @@ static void mod_progress(const char* name, int done, int total)
 {
     char what[96];
     snprintf(what, sizeof(what), "%s  (%d of %d)", name, done + 1, total);
-    draw_progress("Checking your 20XX image's stages", what, done, total);
+    draw_progress("Checking your 20XX image", what, done, total);
 }
 
 /* What Slippi Online needs before it starts; 0 when it can */
@@ -370,17 +370,14 @@ static int online_ready(void)
     char error[256];
     if (s_disc_state != 0) {
         message("No Melee disc image",
-                "Put your own dump of Super Smash Bros. Melee (NTSC 1.02, GALE01) on the SD card "
-                "or a USB drive as /apps/melee/game.iso or /games/melee.iso.",
+                "Put your NTSC 1.02 dump on the SD card as /apps/melee/game.iso.",
                 RED);
         return -1;
     }
     if (launcher_slippi_folder() < 0) {
         message("No Slippi account",
-                "Slippi Online plays as your Slippi account. Install Slippi Launcher on a computer, "
-                "log in once, then copy its user.json (on Windows: %APPDATA%\\Slippi Launcher\\netplay\\"
-                "User\\Slippi\\user.json) to /apps/melee/slippi on the SD card. Treat it like a "
-                "password: anyone with it can play as you.",
+                "Log in with Slippi Launcher on a PC, then copy its user.json to /apps/melee/slippi. "
+                "Keep it private.",
                 RED);
         return -1;
     }
@@ -398,8 +395,7 @@ static int online_ready(void)
     slippi_status(&st);
     if (!st.have_codeset || st.missing_shipped) {
         message("Slippi's files are missing",
-                "Slippi's online code and files go in /apps/melee/slippi on the SD card (netplay.gct, "
-                "files/ and patches/): copy them from this release's zip again.",
+                "Copy /apps/melee/slippi from the release zip again.",
                 RED);
         return -1;
     }
@@ -455,39 +451,33 @@ static void settings(LauncherSettings* s)
     int focus = 0, top = 0, focus_row = 0;
     Row rows[] = {
         { "Slippi Online", "Rumble", ON_OFF, 2, &rumble,
-          "Your controller's rumble in online games (Melee's own setting can't reach it online)." },
+          "Controller rumble in online games." },
         { NULL, "Delay frames", DELAY, 10, &delay,
-          "Online input delay. Auto: by the opponent's ping, 3 to 5 frames on Wi-Fi, 2 to 4 wired. "
-          "A number: always that." },
+          "Online input delay. Auto picks it from the ping." },
         /* (no row for config.ini's delay_adjust=1, the delay following the ping during a
          * game too: slippi/so_exi.c has it, off and untested; a line in config.ini turns it on) */
         { "Melee (offline)", "Controller fix", FIX, 3, &s->controller_fix,
-          "UCF 0.84: dashback, shield drop, 1.0 cardinals and more, as on Slippi. Online play has it "
-          "always." },
-        { NULL, "PAL balance", ON_OFF, 2, &s->pal, "The PAL version's character balance changes." },
+          "UCF 0.84 for offline play. Online always has it." },
+        { NULL, "PAL balance", ON_OFF, 2, &s->pal, "The PAL version's character balance." },
         { NULL, "Convenience", MODS, 4, &s->mods,
-          "Stealth: neutral spawns, tags... Tournament: also D-pad rumble, stage striking. "
-          "Friendlies: also skipped results, salty runback (A+B)." },
-        { NULL, "Frozen stages", STAGES, 3, &s->stages, "Stages without their transformations or hazards." },
-        { NULL, "Gameplay", GAMEPLAY, 4, &s->gameplay, "Tournament rules: limits on ledge grabs and wobbling." },
+          "Slippi's Stealth, Tournament or Friendlies codes." },
+        { NULL, "Frozen stages", STAGES, 3, &s->stages, "No stage transformations or hazards." },
+        { NULL, "Gameplay", GAMEPLAY, 4, &s->gameplay, "Ledge grab and wobbling limits." },
         { NULL, "Screen", SCREEN, 4, &s->screen,
-          "Slippi's widescreen code (online too). Auto: on when Wii Settings say 16:9." },
-        { NULL, "Safety", ON_OFF, 2, &s->safety, "Slippi's safety codes for offline play." },
+          "Widescreen. Auto follows Wii Settings." },
+        { NULL, "Safety", ON_OFF, 2, &s->safety, "Slippi's safety codes." },
         { NULL, "Cheats", ON_OFF, 2, &s->cheats,
-          "Your Gecko codes: /apps/melee/codes/GALE01.gct (or /codes/GALE01.gct). Offline only." },
+          "Your Gecko codes: /apps/melee/codes/GALE01.gct." },
         { "Slippi", "Replays", ON_OFF, 2, &s->replays,
-          "Each game saved as a .slp in /apps/melee/slippi/replays, as Slippi records it." },
+          "Save online games as .slp files." },
         { NULL, "Console mirroring", ON_OFF, 2, &s->console,
-          "Slippi Launcher can connect to this Wii (Console Mirroring) to watch, record or relay "
-          "games." },
+          "Let Slippi Launcher watch this Wii." },
         { NULL, "Record Melee's games", ON_OFF, 2, &s->offline_record,
           "Replays and mirroring for Melee too. Unlocks everything." },
         { "Launcher", "Skip this screen", ON_OFF, 2, &s->skip,
-          "Start the last choice at once. Hold B as the game starts for this screen (on a Wii "
-          "Remote, 1 or B, when no GameCube controller is plugged in)." },
+          "Start the last choice right away. Hold B at startup to come back." },
         { NULL, "Diagnostics", ON_OFF, 2, &s->diagnostics,
-          "For finding what makes online games run badly: each one's timing, saved in "
-          "/apps/melee/logs/diag (the newest 40 kept)." },
+          "Log each online game's timing to /apps/melee/logs/diag." },
         /* only with a 20XX image */
         { "20XX", "20XX menu", ON_OFF, 2, &s->xx_menu,
           "20XX's music and looks in Slippi Online, under Extra.", NEED_20XX },
@@ -670,7 +660,7 @@ static void game_info(void)
         gfx_text(&font_small, x + 60, 310, GREY, "Connection");
         gfx_text(&font_small, x + 200, 310, WHITE, s_link >= 0 ? so_link_name(s_link) : "...");
         gfx_text(&font_small, x + 60, 350, GREY,
-                 "Slippi Online: Slippi's online modes (not Ranked), against Slippi on PC.");
+                 "Slippi Online: Unranked, Direct and Teams against Slippi on PC.");
         gfx_text(&font_small, x + 60, 372, GREY,
                  "Unofficial: not made or supported by Project Slippi or Nintendo.");
         footer("A  check the disc image      B  back");
@@ -726,20 +716,16 @@ static void help_page(void)
         for (int i = 0; i < s_mod_count; i++) {
             have_20xx |= s_mods[i].is_20xx;
         }
-        background("Help  \xC2\xB7  what each thing needs");
+        background("Help");
         gfx_round_rect(x + 40, 112, 560, 324, 14, PANEL, 235);
         help_item(x, &y, "Melee disc image", s_disc_state == 0,
-                  "Needed for everything. Your own NTSC 1.02 dump (GALE01) at "
-                  "/apps/melee/game.iso or /games/melee.iso.");
+                  "Your NTSC 1.02 dump, as /apps/melee/game.iso.");
         help_item(x, &y, "Slippi account", st.have_account,
-                  "For Slippi Online. Slippi Launcher on a PC, log in once, then copy its user.json "
-                  "to /apps/melee/slippi. Treat it like a password.");
+                  "Copy user.json from Slippi Launcher to /apps/melee/slippi.");
         help_item(x, &y, "Slippi's files", st.have_codeset && !st.missing_shipped,
-                  "For Slippi Online. From this release's zip into /apps/melee/slippi "
-                  "(netplay.gct, files/, patches/).");
+                  "From the release zip, in /apps/melee/slippi.");
         help_item(x, &y, "20XX image", have_20xx,
-                  "For the 20XX option and its in-game menu. A 20XX HACK PACK image on the SD card "
-                  "or a USB drive.");
+                  "A 20XX Hack Pack image on the SD card or a USB drive.");
         footer("B / Y  back");
         present();
     }
@@ -851,8 +837,7 @@ int launcher_ui(LauncherSettings* s)
             if (item == ITEM_MELEE) {
                 if (s_disc_state != 0) {
                     message("No Melee disc image",
-                            "Put your own dump of Super Smash Bros. Melee (NTSC 1.02, GALE01) on the SD "
-                            "card or a USB drive as /apps/melee/game.iso or /games/melee.iso.",
+                            "Put your NTSC 1.02 dump on the SD card as /apps/melee/game.iso.",
                             RED);
                     continue;
                 }

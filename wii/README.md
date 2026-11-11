@@ -190,6 +190,9 @@ setting on checks the image's files (about 40 s). For 20XX 5.0.2, 49 of 75 stage
 - **A Wii Remote with a Classic Controller** (or Classic Controller Pro) plays as the GameCube
   controller of its number when none is plugged in there: + is Start, ZR is Z, ZL a full L press,
   the right stick the C-stick. No rumble. A Wii Remote alone is for the launcher only.
+- **HOME** on a Wii Remote (or its Classic Controller), held for a second during the game, leaves
+  for the Homebrew Channel, as the console's RESET button does. In the launcher, HOME leaves at
+  once.
 
 ## Cheats
 

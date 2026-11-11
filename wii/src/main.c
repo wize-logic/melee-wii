@@ -493,9 +493,16 @@ static void keep_loader_stub(void)
  * debugger, dolphin_run.py --backtrace) shows whether the exit gets to it */
 static u32 s_exit_test;
 
+int melee_wii_home_held(void); /* classic.c */
+
 static void exit_test_tick(void* user)
 {
     melee_wii_stall_tick(user);
+    if (melee_wii_home_held()) {
+        /* a Wii Remote's HOME held for a second: as the reset button */
+        WL_LOG_I("melee", "HOME held: leaving");
+        wl_platform_exit(WL_EXIT_LOADER);
+    }
     if (s_exit_test != 0 && ++s_exit_test == 1250) {
         WL_LOG_I("melee", "exittest: leaving as the reset button does");
         wl_platform_exit(WL_EXIT_LOADER);

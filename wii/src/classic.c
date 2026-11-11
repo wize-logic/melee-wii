@@ -7,12 +7,17 @@
  * stick as the control stick and the right one as the C-stick, at a GameCube
  * stick's reach; L and R analog (a Pro's, which are digital, all or nothing),
  * ZR as Z and ZL as a full L. The sticks come from libogc's angle and
- * magnitude, on a circle. */
+ * magnitude, on a circle.
+ *
+ * HOME, on any Remote or its Classic Controller, held for a second leaves
+ * for the Homebrew Channel as the console's RESET button does: the system
+ * watch thread (main.c's tick) asks here and leaves as it does for RESET. */
 
 #include <math.h>
 #include <string.h>
 
 #include <gccore.h>
+#include <ogc/lwp_watchdog.h>
 #include <wiiuse/wpad.h>
 
 /* A GameCube stick's full reach, as Melee reads it (its gate's corners are
@@ -20,7 +25,12 @@
 #define STICK_FULL 100.0f
 #define CLASSIC_TRIGGER_FULL 31
 
+#define HOME_HOLD_MS 1000
+
 static int s_started;
+static int s_home_down;
+static u64 s_home_since;
+static volatile int s_home_leave;
 
 static void js_to_xy(const struct joystick_t* js, s8 out[2])
 {
@@ -42,12 +52,51 @@ void melee_wii_classic_init(void)
     }
 }
 
+/* HOME held on any Remote (or its Classic Controller's): the time it has
+ * been down, not a count of scans, which a game replaying frames makes more
+ * of */
+static void scan_home(void)
+{
+    int down = 0;
+    for (int chan = 0; chan < 4; chan++) {
+        u32 type;
+        const WPADData* d;
+        if (WPAD_Probe(chan, &type) != WPAD_ERR_NONE) {
+            continue;
+        }
+        d = WPAD_Data(chan);
+        if (d == NULL || d->err != WPAD_ERR_NONE) {
+            continue;
+        }
+        if ((d->btns_h & WPAD_BUTTON_HOME) != 0 ||
+            (type == WPAD_EXP_CLASSIC && (d->btns_h & WPAD_CLASSIC_BUTTON_HOME) != 0))
+        {
+            down = 1;
+        }
+    }
+    if (!down) {
+        s_home_down = 0;
+    } else if (!s_home_down) {
+        s_home_down = 1;
+        s_home_since = gettime();
+    } else if (diff_msec(s_home_since, gettime()) >= HOME_HOLD_MS) {
+        s_home_leave = 1;
+    }
+}
+
 /* Once a frame, before the reads */
 void melee_wii_classic_scan(void)
 {
     if (s_started) {
         WPAD_ScanPads();
+        scan_home();
     }
+}
+
+/* HOME has been held for a second (the system watch thread asks) */
+int melee_wii_home_held(void)
+{
+    return s_home_leave;
 }
 
 /* Controller `chan`'s state from Remote `chan`'s Classic Controller: 1, or 0

@@ -87,6 +87,9 @@ SoMmState so_mm_state(void);
 const char *so_mm_error(void);
 /* NULL before the first search. */
 const SoMatchResult *so_mm_result(void);
+/* After SO_MM_ERROR: the version the server said is current when it turned
+ * the ticket down, or "". */
+const char *so_mm_latest_version(void);
 u16 so_mm_port(void);
 
 /* ---- messages (so_mm_msg.c; no networking, unit-tested) ------------------ */

@@ -18,7 +18,9 @@
 #define SO_CONFIG_PATH "/slippi/config.ini"
 
 /* The netplay version Slippi Dolphin (Ishiiruka) reports; the server only
- * pairs compatible versions. */
+ * pairs compatible versions. A newer one replaces it on its own: user.json's
+ * latestVersion at start-up, and the server's when it turns a ticket down as
+ * outdated (so_client.c searches again with it). */
 #define SO_APP_VERSION_DEFAULT "3.6.4"
 #define SO_MM_HOST_DEFAULT "mm.slippi.gg"
 #define SO_MM_PORT_DEFAULT 43113
@@ -145,6 +147,9 @@ int so_user_parse(SoUser *user, const char *text, u32 len);
 /* Reads both files from the boot drive. Returns 0 when user.json is usable;
  * the settings fall back to defaults either way. */
 int so_config_load(SoConfig *config, SoUser *user);
+
+/* True when version `a` ("3.6.4") is newer than `b`, number by number. */
+int so_version_newer(const char *a, const char *b);
 
 /* True when the matchmaking host is Slippi's real server. */
 int so_config_is_real_mm(const SoConfig *config);

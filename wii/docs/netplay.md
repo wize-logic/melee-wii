@@ -253,6 +253,13 @@ writes `input_delay`; the rest is by hand. `so_config.h` describes every key.
 | `net_io` | `auto`, `threads`, `poll` | `poll` on Wi-Fi, `threads` wired |
 | `local_port` | a UDP port, `0` for a random one | `0` |
 | `log_host` | `ip[:port]`: the log as UDP datagrams to a PC | none (port 51450) |
+| `app_version` | the Slippi Dolphin version to claim | `3.6.4` |
+
+The server only matches players on its current Slippi Dolphin version. A newer version replaces
+`app_version` on its own: `user.json`'s `latestVersion` at start-up, and the version the server
+names when it turns a search down as outdated (the search then starts again with it, for the rest
+of the session). Claiming a version only works while our netplay still matches that Dolphin's: read
+its release notes before trusting a new one.
 
 The `test_*` keys make lag, packet loss and slow savestates for tests (`test_rx_stall_ms` makes
 the lag spikes the long rollbacks are tested with).

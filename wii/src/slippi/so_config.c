@@ -239,6 +239,24 @@ int so_user_parse(SoUser *user, const char *text, u32 len)
 	return 0;
 }
 
+int so_version_newer(const char *a, const char *b)
+{
+	while (*a || *b) {
+		unsigned long x = 0, y = 0;
+		while (*a >= '0' && *a <= '9')
+			x = x * 10 + (unsigned long)(*a++ - '0');
+		while (*b >= '0' && *b <= '9')
+			y = y * 10 + (unsigned long)(*b++ - '0');
+		if (x != y)
+			return x > y;
+		while (*a && (*a < '0' || *a > '9'))
+			a++;
+		while (*b && (*b < '0' || *b > '9'))
+			b++;
+	}
+	return 0;
+}
+
 int so_config_is_real_mm(const SoConfig *config)
 {
 	return strstr(config->mm_host, "slippi.gg") != NULL;
@@ -279,6 +297,11 @@ int so_config_load(SoConfig *config, SoUser *user)
 	if (res < 0) {
 		so_log("account: %s is not a valid Slippi user.json", config->user_path);
 		return -2;
+	}
+	/* Slippi Launcher writes the version the server last asked for. */
+	if (so_config_is_real_mm(config) && so_version_newer(user->latest_version, config->app_version)) {
+		so_log("account: app version %s, from user.json (was %s)", user->latest_version, config->app_version);
+		strlcpy(config->app_version, user->latest_version, sizeof(config->app_version));
 	}
 	/* Never the play key itself. */
 	so_log("account: %s (%s), play key %d chars", user->connect_code, user->display_name,

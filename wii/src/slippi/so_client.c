@@ -301,7 +301,18 @@ static void step(void)
 	case SO_CLIENT_SEARCHING:
 		so_mm_poll();
 		if (so_mm_state() == SO_MM_ERROR) {
-			set_error(so_mm_error());
+			/* Turned down as outdated: claim the version the server named
+			 * and queue again, as Slippi Launcher would after updating.
+			 * Only ever upward, so this happens once per new version. */
+			const char *latest = so_mm_latest_version();
+			if (so_config_is_real_mm(&c.config) && so_version_newer(latest, c.config.app_version)) {
+				so_log("client: the server wants version %s (we sent %s); searching again with it", latest,
+					c.config.app_version);
+				strlcpy(c.config.app_version, latest, sizeof(c.config.app_version));
+				begin_search();
+			} else {
+				set_error(so_mm_error());
+			}
 		} else if (so_mm_state() == SO_MM_MATCHED) {
 			c.match = *so_mm_result();
 			so_mm_stop();

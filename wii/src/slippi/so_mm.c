@@ -94,6 +94,7 @@ int so_mm_start(const SoConfig *config, const SoUser *user, const SoSearch *sear
 	so_mm_stop();
 	memset(&mm.result, 0, sizeof(mm.result));
 	mm.error[0] = '\0';
+	mm.latest_version[0] = '\0';
 	mm.port = port;
 
 	bind_address.host = ENET_HOST_ANY;
@@ -257,6 +258,11 @@ SoMmState so_mm_state(void)
 const char *so_mm_error(void)
 {
 	return mmp ? mm.error : "Failed to create mm client";
+}
+
+const char *so_mm_latest_version(void)
+{
+	return mmp ? mm.latest_version : "";
 }
 
 const SoMatchResult *so_mm_result(void)

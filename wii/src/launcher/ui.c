@@ -12,6 +12,7 @@
 #include "../launcher.h"
 #include "../slippi/so_wii.h"
 #include "files.h"
+#include "update.h"
 #include "gfx.h"
 #include "input.h"
 #include "md5.h"
@@ -328,6 +329,27 @@ static void message(const char* title, const char* text, unsigned int color)
     }
 }
 
+/* A question: 1 for A, 0 for B */
+static int confirm(const char* title, const char* text, const char* hints)
+{
+    int x = left();
+    for (;;) {
+        unsigned int in = input_poll();
+        background(NULL);
+        gfx_round_rect(x + 60, 140, 520, 220, 16, PANEL, 245);
+        text_fit(&font_body_bold, x + 84, 160, GOLD, title, 472, 0);
+        text_wrapped(&font_small, x + 84, 200, 24, WHITE, text, 470, 6);
+        footer(hints);
+        present();
+        if (in & (IN_A | IN_START)) {
+            return 1;
+        }
+        if (in & IN_B) {
+            return 0;
+        }
+    }
+}
+
 typedef struct Progress {
     const char* title;
 } Progress;
@@ -353,6 +375,34 @@ static void prepare_progress(const char* name, int done, int total, void* ctx)
     (void) ctx;
     snprintf(what, sizeof(what), "%s  (%d of %d)", name, done < total ? done + 1 : done, total);
     draw_progress("Making Slippi's menus", what, done, total);
+}
+
+static void update_progress(const char* what, int done, int total)
+{
+    char title[48];
+    snprintf(title, sizeof(title), "Updating to %s", update_version());
+    draw_progress(title, what, done, total);
+}
+
+/* A newer release: asked once a start; installed on A */
+static void offer_update(void)
+{
+    char text[200], error[128];
+    snprintf(text, sizeof(text),
+             "Update now? The new version replaces the program and Slippi's files. "
+             "Your settings, saves and account stay.");
+    snprintf(error, sizeof(error), "Version %s is out", update_version());
+    if (!confirm(error, text, "A  update      B  later")) {
+        return;
+    }
+    if (update_install(update_progress, error, sizeof(error)) < 0) {
+        message("The update failed", error, RED);
+        return;
+    }
+    message("Updated", "Start Melee for the Wii again from the Homebrew Channel.", GREEN);
+    gfx_shutdown();
+    input_shutdown();
+    melee_wii_exit();
 }
 
 /* (launcher_mod_start) 20XX's stage files, checked the first time */
@@ -479,6 +529,8 @@ static void settings(LauncherSettings* s)
           "Replays and mirroring for Melee too. Unlocks everything." },
         { "Launcher", "Skip this screen", ON_OFF, 2, &s->skip,
           "Start the last choice right away. Hold B at startup to come back." },
+        { NULL, "Check for updates", ON_OFF, 2, &s->update_check,
+          "Look for a newer version on GitHub at start." },
         { NULL, "Diagnostics", ON_OFF, 2, &s->diagnostics,
           "Log each online game's timing to /apps/melee/logs/diag." },
         /* only with a 20XX image */
@@ -794,9 +846,18 @@ int launcher_ui(LauncherSettings* s)
         return -1;
     }
     slippi_status(&st);
+    if (s->update_check) {
+        update_check_start();
+    }
+    int update_asked = 0;
     for (;;) {
         unsigned int in = input_poll();
         int pointed, item, focus = 0;
+        if (!update_asked && update_state() == UPDATE_AVAILABLE) {
+            update_asked = 1;
+            offer_update();
+            continue;
+        }
         /* rebuild the visible items from their prerequisites each frame, keeping
          * the cursor on the same item -- items appear and disappear live */
         s_item_count = 0;
@@ -885,6 +946,9 @@ int launcher_ui(LauncherSettings* s)
     }
     draw_progress(s->mode == LAUNCH_ONLINE ? "Starting Slippi Online"
                   : s->mode == LAUNCH_MOD ? "Starting 20XX" : "Starting Melee", " ", 0, 0);
+    /* the update check done first: it brings the network up, which the
+     * online client does too */
+    update_wait(8000);
     launcher_mod_start(s, mod_progress);
     gfx_shutdown();
     input_hand_over();

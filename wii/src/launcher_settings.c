@@ -17,7 +17,7 @@ static const struct {
     K(mode),     K(skip),     K(controller_fix), K(pal),    K(mods),
     K(stages),   K(gameplay), K(screen),         K(safety), K(cheats),
     K(replays),  K(console),  K(xx_menu),       K(diagnostics),
-    K(offline_record), K(lag_reduction),
+    K(offline_record), K(lag_reduction), K(update_check),
 #undef K
 };
 
@@ -28,6 +28,7 @@ void launcher_settings_default(LauncherSettings* s)
     s->replays = 1;
     s->console = 1;
     s->screen = LAUNCH_SCREEN_AUTO;
+    s->update_check = 1;
 }
 
 static int clamp(int v, int lo, int hi)
@@ -78,6 +79,7 @@ int launcher_settings_load(LauncherSettings* s, const char* path)
     s->xx_menu = s->xx_menu != 0;
     s->offline_record = s->offline_record != 0;
     s->diagnostics = s->diagnostics != 0;
+    s->update_check = s->update_check != 0;
     return 0;
 }
 

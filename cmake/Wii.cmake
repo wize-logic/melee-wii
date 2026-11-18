@@ -277,7 +277,10 @@ target_include_directories(melee_port_ogc PRIVATE ${_melee_root}/wii/src)
 target_compile_options(melee_port_ogc PRIVATE -std=gnu17 -O2 -g -Wall)
 target_compile_definitions(melee_port_ogc PRIVATE
     $<$<BOOL:${MELEE_ORIG_CODE}>:MELEE_ORIG_CODE>)
-target_link_libraries(melee_port_ogc PRIVATE wiilib::platform)
+target_link_libraries(melee_port_ogc PRIVATE wiilib::platform bearssl)
+# (the launcher's updates: Slippi's TLS client, and zlib for the zip)
+target_include_directories(melee_port_ogc PRIVATE ${_melee_root}/wii/src/slippi/shim
+    ${DEVKITPRO}/portlibs/ppc/include)
 
 set(_melee_ldscripts "${DEVKITPRO}/devkitPPC/powerpc-eabi/lib")
 set(_melee_specs "${CMAKE_BINARY_DIR}/melee.specs")
@@ -360,7 +363,7 @@ if(MELEE_ORIG_CODE)
         -Wl,--start-group
         melee_sdk melee_port melee_port_ogc melee_slippi bearssl
         -Wl,--end-group
-        wiilib::platform wiilib::gcm)
+        wiilib::platform wiilib::gcm ${DEVKITPRO}/portlibs/ppc/lib/libz.a)
     target_link_options(melee PRIVATE
         -Wl,-Map,${CMAKE_BINARY_DIR}/melee.map
         -Wl,--wrap=vsnprintf
@@ -378,7 +381,7 @@ else()
         -Wl,--start-group
         melee_game melee_sdk melee_port melee_port_ogc melee_slippi bearssl
         -Wl,--end-group
-        wiilib::platform wiilib::gcm)
+        wiilib::platform wiilib::gcm ${DEVKITPRO}/portlibs/ppc/lib/libz.a)
     target_link_options(melee PRIVATE -Wl,-Map,${CMAKE_BINARY_DIR}/melee.map
         -Wl,--wrap=vsnprintf)
 

@@ -6,7 +6,11 @@
 
 #include <stddef.h>
 
+#ifndef MELEE_WII_VERSION /* (the host tests set their own) */
 #define MELEE_WII_VERSION "1.1.0"
+#endif
+/* Where the launcher looks for newer releases (launcher/update.c) */
+#define MELEE_WII_UPDATE_REPO "wize-logic/melee-wii"
 
 enum { LAUNCH_MELEE, LAUNCH_ONLINE, LAUNCH_MOD };
 
@@ -35,6 +39,7 @@ typedef struct LauncherSettings {
     int offline_record; /* the two above for Melee's games too: Slippi's core codes in Melee */
     int xx_menu; /* 20XX's menu in Slippi Online, from a 20XX image (mod_values.c) */
     int diagnostics; /* a record of each online game's timing in logs/diag (slippi/so_gamelog.c) */
+    int update_check; /* ask GitHub for a newer release as the launcher opens (launcher/update.c) */
     char mod_path[160]; /* LAUNCH_MOD: the modded image (20XX), launcher/mods.c */
 } LauncherSettings;
 

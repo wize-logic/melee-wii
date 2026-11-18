@@ -111,6 +111,7 @@ Kept in `sd:/apps/melee/settings.ini`.
 | Console mirroring | On, Off | Slippi Online's games |
 | Record Melee's games | Off, On | Replays and Console mirroring for Melee's games too: see below |
 | Skip this screen | Off, On | Starts the last choice at once. Hold B as it starts to get the launcher back: on a GameCube controller, or with none plugged in, 1 or B on a Wii Remote (b on its Classic Controller) |
+| Check for updates | On, Off | Asks GitHub for a newer release as the launcher opens: see [Updates](#updates) |
 | Diagnostics | Off, On | Records each online game's timing: [docs/netplay.md](docs/netplay.md#diagnostics) |
 | 20XX menu | Off, On | Slippi Online only. Shown with a 20XX image: see [20XX](#20xx) |
 
@@ -127,6 +128,16 @@ written by them.
 
 With a component cable and the Wii set to 480p, the game boots in 480p without asking; B held at
 the start still asks.
+
+### Updates
+
+With **Check for updates** on (the default) and an internet connection, the launcher asks this
+project's GitHub releases for a newer version as it opens. When there is one, it asks whether to
+update: A downloads the release (over TLS), checks it against the SHA-256 GitHub gives, and writes
+its files where the zip puts them, as installing by hand does; your settings, saves, account and
+disc images are not in it, so they stay. Then start Melee for the Wii again. A new version of
+Slippi Online comes this way: the matchmaking service only pairs players of Slippi's current
+version.
 
 ## Slippi Online
 

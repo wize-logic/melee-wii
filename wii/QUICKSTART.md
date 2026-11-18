@@ -43,6 +43,11 @@ The first start of Slippi Online makes Slippi's menus from your disc, which take
 In the launcher, **Y** (y on a Classic Controller) says what each item still needs, and
 **Game info** checks your disc image and account.
 
+## Updates
+
+From 1.1.0 on, the launcher looks for a newer version as it opens and asks before installing it
+(Settings > Check for updates). Your settings, saves and account stay.
+
 ## Back to the Homebrew Channel
 
 In the launcher, choose **Exit** (or press HOME on a Wii Remote). During a game, hold **HOME** on

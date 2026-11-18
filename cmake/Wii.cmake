@@ -218,6 +218,17 @@ target_compile_definitions(melee_port PRIVATE TARGET_WII
 target_compile_options(melee_port PRIVATE -std=gnu17 -O2 -g -Wall -Wno-unused-function)
 target_link_libraries(melee_port PRIVATE wiilib::platform wiilib::gcm)
 
+# BearSSL (libs/bearssl): the TLS client of Slippi Online's matchmaking and
+# the launcher's updates. Without the parts that need an operating system
+# (time, /dev/urandom) or another CPU: the port gives it the time and a seed.
+file(GLOB_RECURSE _bearssl_sources CONFIGURE_DEPENDS "${_melee_root}/libs/bearssl/src/*.c")
+add_library(bearssl STATIC ${_bearssl_sources})
+target_include_directories(bearssl PUBLIC ${_melee_root}/libs/bearssl/inc
+    PRIVATE ${_melee_root}/libs/bearssl/src)
+target_compile_definitions(bearssl PRIVATE BR_USE_URANDOM=0 BR_USE_UNIX_TIME=0 BR_USE_WIN32_RAND=0
+    BR_USE_WIN32_TIME=0 BR_RDRAND=0 BR_POWER8=0 BR_AES_X86NI=0 BR_SSE2=0 BR_INT128=0 BR_UMUL128=0)
+target_compile_options(bearssl PRIVATE -O2 -G0 -ffunction-sections -fdata-sections -w)
+
 # Slippi Online's client (written for Slippi Nintendont's kernel, here on
 # libogc): matchmaking, the connection to the opponent, and Slippi's EXI
 # device, which the online codeset in the game talks to (wii/src/exi.c)
@@ -236,7 +247,7 @@ set_source_files_properties("${_melee_root}/wii/src/slippi/gecko_blobs.S" PROPER
     OBJECT_DEPENDS "${_melee_root}/wii/slippi/gecko/g_online_boot.bin")
 target_compile_options(melee_slippi PRIVATE $<$<COMPILE_LANGUAGE:C>:-std=gnu99 -O2 -g -G0 -Wall
     -Wno-unused-parameter -Wno-unused-function>)
-target_link_libraries(melee_slippi PRIVATE wiilib::platform)
+target_link_libraries(melee_slippi PRIVATE wiilib::platform bearssl)
 
 # The launcher's screen (wii/src/launcher): its drawing, controls, screens,
 # Slippi's files (VCDIFF patches), the disc's MD5
@@ -347,7 +358,7 @@ if(MELEE_ORIG_CODE)
         "${_orig}/image.S" "${_orig}/tramp.S" "${_melee_root}/wii/src/boot_mem2.S")
     target_link_libraries(melee PRIVATE
         -Wl,--start-group
-        melee_sdk melee_port melee_port_ogc melee_slippi
+        melee_sdk melee_port melee_port_ogc melee_slippi bearssl
         -Wl,--end-group
         wiilib::platform wiilib::gcm)
     target_link_options(melee PRIVATE
@@ -365,7 +376,7 @@ else()
         $<TARGET_OBJECTS:melee_port_ogc>)
     target_link_libraries(melee PRIVATE
         -Wl,--start-group
-        melee_game melee_sdk melee_port melee_port_ogc melee_slippi
+        melee_game melee_sdk melee_port melee_port_ogc melee_slippi bearssl
         -Wl,--end-group
         wiilib::platform wiilib::gcm)
     target_link_options(melee PRIVATE -Wl,-Map,${CMAKE_BINARY_DIR}/melee.map

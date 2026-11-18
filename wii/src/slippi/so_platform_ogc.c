@@ -14,6 +14,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/stat.h>
+#include <network.h>
+#include <time.h>
 
 #include <wl/base/base.h>
 
@@ -94,6 +96,39 @@ void so_sleep_us(u32 us)
     }
     struct timespec ts = { us / 1000000, (us % 1000000) * 1000 };
     nanosleep(&ts, NULL);
+}
+
+u64 so_timebase(void)
+{
+    return gettime();
+}
+
+u32 so_unix_time(void)
+{
+    time_t t = time(NULL);
+    return t > 946684800 ? (u32) t : 0;
+}
+
+void so_platform_entropy_seed(u8* out, u32 len)
+{
+    u32 words[16];
+    u32 id = 0;
+    u8 mac[6] = { 0 };
+    u64 tb = gettime();
+    memset(words, 0, sizeof(words));
+    ES_GetDeviceID(&id);
+    net_get_mac_address(mac);
+    words[0] = id;
+    words[1] = ((u32) mac[0] << 24) | ((u32) mac[1] << 16) | ((u32) mac[2] << 8) | mac[3];
+    words[2] = ((u32) mac[4] << 8) | mac[5];
+    words[3] = (u32) time(NULL);
+    words[4] = (u32) (tb >> 32);
+    words[5] = (u32) tb;
+    words[6] = s_random;
+    words[7] = (u32) (size_t) &tb; /* (the stack the thread got) */
+    for (u32 i = 0; i < len; i++) {
+        out[i] = ((const u8*) words)[i % sizeof(words)] ^ (u8) (gettime() >> (i & 7));
+    }
 }
 
 u32 so_random(void)

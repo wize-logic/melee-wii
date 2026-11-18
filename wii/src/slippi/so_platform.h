@@ -23,6 +23,15 @@ void so_sleep_us(u32 us);
 /* xorshift32, seeded from the timer and the MAC address. */
 u32 so_random(void);
 
+/* The CPU's timebase, raw (so_entropy.c's samples). */
+u64 so_timebase(void);
+/* Fills `out` with what this console starts from for so_entropy: its
+ * identity, the clock, the timebase. */
+void so_platform_entropy_seed(u8 *out, u32 len);
+/* The wall clock (UNIX seconds), for TLS certificate dates; 0 when it is
+ * not set. */
+u32 so_unix_time(void);
+
 /* ---- synchronisation ----------------------------------------------------- */
 
 /* A mutex built on a one-slot IOS message queue (receive = lock, send =

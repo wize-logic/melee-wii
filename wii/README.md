@@ -13,6 +13,8 @@ disc image, with a launcher and Slippi Online.
 - **Slippi Online** is a Slippi client on the Wii itself, with rollback, against players on Slippi
   Dolphin, over a LAN adapter or Wi-Fi.
 
+Setting up for the first time: [the quick start](QUICKSTART.md).
+
 Unofficial: not made by, affiliated with or endorsed by Nintendo or Project Slippi. No game files
 are in this repository or in a release.
 

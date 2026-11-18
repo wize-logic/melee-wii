@@ -80,6 +80,10 @@ void PAD_ControlMotor(int32_t chan, uint32_t cmd);
 typedef void (*ogc_RDSTHandler)(uint32_t irq, void* ctx);
 uint32_t SI_RegisterPollingHandler(ogc_RDSTHandler handler);
 uint32_t SI_UnregisterPollingHandler(ogc_RDSTHandler handler);
+/* ogc/si.h: the controllers' polling rate (the SDK's SISetSamplingRate:
+ * its table of lines and polls per frame; libogc's retrace refreshes it as
+ * the video mode changes) */
+void SI_SetSamplingRate(uint32_t samplingrate);
 
 /* ogc/conf.h */
 int32_t CONF_GetSoundMode(void);

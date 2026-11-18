@@ -348,10 +348,14 @@ void PADControlMotor(s32 chan, u32 command)
     PAD_ControlMotor(chan, command);
 }
 
-/* libogc samples at its own rate; the game asks for the SDK's default */
+/* The controllers' polling rate, as the SDK sets it: Melee asks for a poll
+ * every 11 ms (lb_80019628), two polls a frame. Left at libogc's start-up
+ * rate, about one a frame, the game read inputs up to a frame old, and the
+ * lag reduction codes, which wait for the frame's second poll, never saw
+ * one. */
 void PADSetSamplingRate(unsigned long msec)
 {
-    (void) msec;
+    SI_SetSamplingRate(msec);
 }
 
 void PADSetSpec(u32 spec)

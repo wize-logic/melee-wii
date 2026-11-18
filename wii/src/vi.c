@@ -102,9 +102,38 @@ void VIInit(void)
  * (a 16:9 TV's clean aperture; the interface widens the 640-pixel frame
  * buffer to it), as Wii programs show 16:9; the game's own modes are 640.
  * The game's object is left as it is. */
+/* The colour the Wii's video encoder puts on the composite signal follows the
+ * mode's TV format, and the game's modes are all NTSC: on a Wii set to PAL
+ * (50 Hz or 60 Hz in Wii Settings) the TV gets NTSC colour, which a PAL TV
+ * cannot decode, and shows the game in black and white. The picture stays
+ * the game's 60 Hz, 525 lines (the game, its timing and Slippi's netplay are
+ * the NTSC release's); only the colour follows the Wii's setting, as PAL Wii
+ * games' 60 Hz mode does: EURGB60 (PAL 60) on a PAL Wii, PAL-M on a
+ * Brazilian one. Progressive scan goes over component, which has no colour
+ * carrier, and stays as it is. */
+#define CONF_VIDEO_PAL 1
+#define CONF_VIDEO_MPAL 2
+
+static u32 tv_mode_for_wii(u32 tv_mode)
+{
+    u32 type = tv_mode & 3;
+    if ((tv_mode >> 2) != VI_NTSC || type == VI_PROGRESSIVE) {
+        return tv_mode;
+    }
+    switch (CONF_GetVideo()) {
+    case CONF_VIDEO_PAL:
+        return VI_TVMODE(VI_EURGB60, type);
+    case CONF_VIDEO_MPAL:
+        return VI_TVMODE(VI_MPAL, type);
+    default:
+        return tv_mode;
+    }
+}
+
 void VIConfigure(GXRenderModeObj* rm)
 {
     GXRenderModeObj mode = *rm;
+    mode.viTVmode = tv_mode_for_wii(mode.viTVmode);
     if (CONF_GetAspectRatio() == 1) {
         mode.viWidth = 704;
         mode.viXOrigin = (720 - 704) / 2;
@@ -147,10 +176,11 @@ u32 VIGetNextField(void)
 
 u32 VIGetTvFormat(void)
 {
-    /* The game is the NTSC release: VI_NTSC, VI_PAL, VI_MPAL are numbered
-     * alike in libogc; a Wii set to EURGB60 shows the NTSC timing */
-    u32 mode = VIDEO_GetCurrentTvMode();
-    return mode <= 2 ? mode : 0;
+    /* The game is the NTSC release and always runs at its 60 Hz
+     * (VIConfigure only changes the colour for a PAL or Brazilian Wii).
+     * The Wii's own mode said VI_PAL on a 50 Hz Wii before the game's first
+     * VIConfigure, and HSD's frame counter took 50 frames for a second. */
+    return VI_NTSC;
 }
 
 u32 VIGetDTVStatus(void)

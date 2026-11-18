@@ -85,6 +85,7 @@ uint32_t SI_UnregisterPollingHandler(ogc_RDSTHandler handler);
 int32_t CONF_GetSoundMode(void);
 int32_t CONF_GetProgressiveScan(void);
 int32_t CONF_GetAspectRatio(void); /* CONF_ASPECT_16_9 is 1 */
+int32_t CONF_GetVideo(void);       /* CONF_VIDEO_NTSC 0, _PAL 1, _MPAL 2 */
 
 
 /* system.h */

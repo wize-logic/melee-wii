@@ -13,6 +13,8 @@ void so_config_defaults(SoConfig *config)
 	strlcpy(config->user_path, SO_USER_PATH, sizeof(config->user_path));
 	strlcpy(config->mm_host, SO_MM_HOST_DEFAULT, sizeof(config->mm_host));
 	config->mm_port = SO_MM_PORT_DEFAULT;
+	strlcpy(config->mm_path, SO_MM_PATH_DEFAULT, sizeof(config->mm_path));
+	config->mm_tls = 1;
 	strlcpy(config->app_version, SO_APP_VERSION_DEFAULT, sizeof(config->app_version));
 	config->boot_quiet_s = 60;
 	config->selftest_stage_pause_s = 3;
@@ -95,6 +97,8 @@ static int apply(SoConfig *c, const char *key, const char *value)
 		return copy_value(c->user_path, sizeof(c->user_path), value);
 	if (!strcmp(key, "mm_host"))
 		return copy_value(c->mm_host, sizeof(c->mm_host), value);
+	if (!strcmp(key, "mm_path"))
+		return copy_value(c->mm_path, sizeof(c->mm_path), value);
 	if (!strcmp(key, "app_version"))
 		return copy_value(c->app_version, sizeof(c->app_version), value);
 	if (!strcmp(key, "selftest_code"))
@@ -144,6 +148,7 @@ static int apply(SoConfig *c, const char *key, const char *value)
 		return 0; \
 	}
 	RANGED("mm_port", mm_port, 1, 65535)
+	RANGED("mm_tls", mm_tls, 0, 1)
 	RANGED("local_port", local_port, 0, 65535)
 	RANGED("log_packets", log_packets, 0, 1)
 	RANGED("boot_quiet_s", boot_quiet_s, 0, 255)
@@ -297,11 +302,6 @@ int so_config_load(SoConfig *config, SoUser *user)
 	if (res < 0) {
 		so_log("account: %s is not a valid Slippi user.json", config->user_path);
 		return -2;
-	}
-	/* Slippi Launcher writes the version the server last asked for. */
-	if (so_config_is_real_mm(config) && so_version_newer(user->latest_version, config->app_version)) {
-		so_log("account: app version %s, from user.json (was %s)", user->latest_version, config->app_version);
-		strlcpy(config->app_version, user->latest_version, sizeof(config->app_version));
 	}
 	/* Never the play key itself. */
 	so_log("account: %s (%s), play key %d chars", user->connect_code, user->display_name,

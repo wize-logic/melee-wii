@@ -7,12 +7,14 @@ Wi-Fi, replays, and the Diagnostics record. For players: [the README](../README.
 
 `wii/src/slippi` is a Slippi online client written for Slippi Nintendont's kernel, here on the
 PowerPC beside the game, over libogc (`so_platform_ogc.c`, `so_socket_ogc.c`). It follows Slippi
-Dolphin (Ishiiruka) 3.6.4, and reports itself as that version.
+Dolphin (Ishiiruka) 3.7.0, and reports itself as that version. The matchmaking service pairs only
+players of one version: a newer Slippi needs a new release of the port, which the launcher's update
+check offers.
 
 | Part | Files |
 |---|---|
 | Slippi's EXI device, which the online codeset in the game talks to | `so_exi.c` (through `wii/src/exi.c`, slot B) |
-| Matchmaking | `so_mm.c`, `so_mm_msg.c` |
+| Matchmaking | `so_mm.c`, `so_mm_msg.c` (STUN, the join message), `so_mmws.c` (the service session), `so_ws.c` (WebSocket), `so_tls.c`, `so_tcp_ogc.c` (TLS over TCP: BearSSL, `libs/bearssl`), `so_entropy.c` |
 | The connection to the opponent | `so_netplay.c`, `so_pads.c`, `enet/` (ENet 1.3.13) |
 | Rollback | `so_rollback.c`, `so_rollback_ranges.c`, `wii/src/mmu_track.c`, `wii/src/copy.c` |
 | Settings and the account | `so_config.c` (`config.ini`, `user.json`) |
@@ -21,12 +23,32 @@ Dolphin (Ishiiruka) 3.6.4, and reports itself as that version.
 | Diagnostics | `so_gamelog.c` |
 | The start, before the game's `main` | `so_wii.c`, `so_client.c` |
 
-Modes: Direct and Unranked. Teams is reachable but untested. Ranked is left out (hidden by the
-boot codes, and refused by the client).
+Modes: Direct, Unranked, Teams and Party. Ranked is left out (hidden by the boot codes, and
+refused by the client).
+
+What 3.7.0 changed, as the port does it:
+
+- **Matchmaking** is a WebSocket over TLS to `matchmaking.slippi.gg/v1/queue` (Slippi's Rust
+  client: join, joined, status, match or error; a ping after 5 s of silence, resumed with the
+  ticket's token for 15 s after a drop). Before joining, STUN on the netplay socket finds the
+  address and port the internet sees (Google's, Cloudflare's and Twilio's servers), sent as
+  candidates with the NAT's kind; a STUN keepalive every 15 s while queued. TLS is BearSSL 1.2
+  (ECDHE, AES-GCM or ChaCha20) with the roots in `so_tls_ta.c`; certificate dates against the
+  Wii's clock, or this build's date when the clock is older or unset.
+- **Pads** are 9 bytes on the wire: the 8 input bytes and random bits the game mixes into the RNG
+  seed (when Luigi, Peach or Game & Watch press B). The device draws those bits from
+  `so_entropy.c`'s pool, never from `so_random()`, which an opponent could work out.
+- **A dropped player** (Teams, Party): each client tells the others what it has of their inputs
+  (0x88), waits 300 ms for the others' reports, then repeats the player's last input until their
+  fighter despawns 16 frames after it. Input suggestions (0x87, a PC's mid-frame hints from a
+  GameCube adapter) are ignored: they only feed predictions.
+- **The device's answers** grow: online inputs 559 bytes (despawn frames, predictions, the RNG
+  byte), the match state 1030 (ranked info, left at 0, and bot flags). L+R+A+Start leaves a Party
+  game.
 
 | Traffic | Where |
 |---|---|
-| Matchmaking | ENet over UDP to `mm.slippi.gg:43113` |
+| Matchmaking | a WebSocket over TLS to `matchmaking.slippi.gg:443`; STUN (UDP) from the netplay port |
 | The match | ENet over UDP, peer to peer, from the same local port (random in 41000–50999) |
 | Console mirroring | TCP 51441 on the Wii; a `SLIP_READY` broadcast on UDP 20582 every 10 s |
 
@@ -253,13 +275,12 @@ writes `input_delay`; the rest is by hand. `so_config.h` describes every key.
 | `net_io` | `auto`, `threads`, `poll` | `poll` on Wi-Fi, `threads` wired |
 | `local_port` | a UDP port, `0` for a random one | `0` |
 | `log_host` | `ip[:port]`: the log as UDP datagrams to a PC | none (port 51450) |
-| `app_version` | the Slippi Dolphin version to claim | `3.6.4` |
+| `app_version` | the Slippi Dolphin version to claim | `3.7.0` |
+| `mm_host`, `mm_port`, `mm_path`, `mm_tls` | the matchmaking service (`mm_tls=0`: `ws://`, a test service) | `matchmaking.slippi.gg`, `443`, `/v1/queue`, `1` |
 
-The server only matches players on its current Slippi Dolphin version. A newer version replaces
-`app_version` on its own: `user.json`'s `latestVersion` at start-up, and the version the server
-names when it turns a search down as outdated (the search then starts again with it, for the rest
-of the session). Claiming a version only works while our netplay still matches that Dolphin's: read
-its release notes before trusting a new one.
+`app_version` is never raised on the service's word: claiming a version only works while the
+client's netplay is that Dolphin's, and 3.7.0 showed a new version can change everything. When
+Slippi moves on, the service turns searches down as outdated, and the log names its version.
 
 The `test_*` keys make lag, packet loss and slow savestates for tests (`test_rx_stall_ms` makes
 the lag spikes the long rollbacks are tested with).

@@ -118,7 +118,7 @@ static u32 preload_disc_files(u8 *cache, u32 size)
 void so_files_preload(void)
 {
 	static const char *const order[] = {
-		"MnMaAll.usd", "MnExtAll.usd", "MnSlMap.usd", "slpCSS.dat", "SdMenu.usd", "SlippiCSS.dat",
+		"MnMaAll.usd", "MnExtAll.usd", "MnSlMap.usd", "SlippiCSS_gui.dat", "SdMenu.usd", "SlippiCSS.dat",
 		"SdSlChr.usd", "MxScn.dat", "GameSetup.dat",
 	};
 	u32 size, used = 0, n;

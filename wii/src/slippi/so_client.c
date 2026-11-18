@@ -252,20 +252,44 @@ static int resolve_with_retries(const char *host, u32 *server)
 
 /* Starts (or restarts) matchmaking. Called with the lock held; drops it
  * while the server's name resolves, since DNS blocks. */
+/* The public STUN servers, asked in this order (SlippiMatchmaking.h's
+ * STUN_SERVERS; the non-Google ones for networks that block Google) */
+static const struct {
+	const char *host;
+	u16 port;
+} stun_servers[SO_STUN_SERVERS] = {
+	{ "stun.l.google.com", 19302 },
+	{ "stun1.l.google.com", 19302 },
+	{ "stun.cloudflare.com", 3478 },
+	{ "global.stun.twilio.com", 3478 },
+};
+
 static void begin_search(void)
 {
 	char host[sizeof(c.config.mm_host)];
-	u32 server;
-	int res;
+	SoMmServers servers;
+	int res, i;
 
 	c.searches++;
 	strlcpy(host, c.config.mm_host, sizeof(host));
+	memset(&servers, 0, sizeof(servers));
 	SO_TRACE(SO_THREAD_NET);
 	SO_STEP("mm resolve");
 	so_mutex_unlock(&c.lock);
 	res = wait_for_address();
 	if (res == 0)
-		res = resolve_with_retries(host, &server);
+		res = resolve_with_retries(host, &servers.mm_addr);
+	/* a STUN server that does not resolve is left out */
+	for (i = 0; res == 0 && i < SO_STUN_SERVERS && !c.cancel_requested && !c.search_requested; i++) {
+		u32 addr;
+		if (so_resolve(stun_servers[i].host, &addr) == 0) {
+			servers.stun_addr[servers.stun_count] = addr;
+			servers.stun_port[servers.stun_count] = stun_servers[i].port;
+			servers.stun_count++;
+		} else {
+			so_log("client: could not resolve the STUN server %s", stun_servers[i].host);
+		}
+	}
 	so_mutex_lock(&c.lock);
 	SO_TRACE(SO_THREAD_NET);
 	if (c.cancel_requested || c.search_requested)
@@ -287,7 +311,7 @@ static void begin_search(void)
 		return;
 	}
 	SO_TRACE(SO_THREAD_NET);
-	if (so_mm_start(&c.config, &c.user, &c.search, server, c.port) < 0) {
+	if (so_mm_start(&c.config, &c.user, &c.search, &servers, c.port) < 0) {
 		set_error(so_mm_error());
 		return;
 	}
@@ -301,18 +325,10 @@ static void step(void)
 	case SO_CLIENT_SEARCHING:
 		so_mm_poll();
 		if (so_mm_state() == SO_MM_ERROR) {
-			/* Turned down as outdated: claim the version the server named
-			 * and queue again, as Slippi Launcher would after updating.
-			 * Only ever upward, so this happens once per new version. */
-			const char *latest = so_mm_latest_version();
-			if (so_config_is_real_mm(&c.config) && so_version_newer(latest, c.config.app_version)) {
-				so_log("client: the server wants version %s (we sent %s); searching again with it", latest,
-					c.config.app_version);
-				strlcpy(c.config.app_version, latest, sizeof(c.config.app_version));
-				begin_search();
-			} else {
-				set_error(so_mm_error());
-			}
+			if (so_mm_latest_version()[0])
+				so_log("client: Slippi %s is out; this client plays %s: the launcher's update gets it",
+					so_mm_latest_version(), c.config.app_version);
+			set_error(so_mm_error());
 		} else if (so_mm_state() == SO_MM_MATCHED) {
 			c.match = *so_mm_result();
 			so_mm_stop();
@@ -473,8 +489,8 @@ int so_client_init(void)
 	so_step_pause_us = (u32)c.config.diag_step_pause_ms * 1000;
 	so_diag_start(&c.config);
 	if (so_config_is_real_mm(&c.config))
-		so_log("client: matchmaking %s:%u, app version %s, delay %s%u", c.config.mm_host,
-			(unsigned)c.config.mm_port, c.config.app_version,
+		so_log("client: matchmaking %s%s, app version %s, delay %s%u", c.config.mm_host,
+			c.config.mm_path, c.config.app_version,
 			c.config.delay_override ? "" : "by the opponent's ping, from ", (unsigned)c.config.delay);
 	else
 		so_log("client: TEST matchmaking server %s:%u", c.config.mm_host, (unsigned)c.config.mm_port);

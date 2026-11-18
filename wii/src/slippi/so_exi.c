@@ -9,6 +9,7 @@
 #include "so_rollback.h"
 #include "so_alloc.h"
 #include "so_client.h"
+#include "so_entropy.h"
 #include "so_files.h"
 #include "so_netplay.h"
 #include "so_platform.h"
@@ -69,8 +70,13 @@ enum { RESP_NORMAL = 1, RESP_SKIP = 2, RESP_DISCONNECTED = 3 };
 enum { MM_IDLE = 0, MM_INITIALIZING = 1, MM_MATCHMAKING = 2, MM_OPPONENT_CONNECTING = 3, MM_CONNECTION_SUCCESS = 4,
 	MM_ERROR = 5 };
 
-#define RXB_SIZE 297
-#define MSRB_SIZE 962
+/* Slippi 3.7.0's answers: the online inputs (RXB, Online.s) and the match
+ * state (MSRB) */
+#define RXB_SIZE 559
+#define RXB_DESPAWN_FRAMES 0x126	/* s32[3]: when a dropped player's fighter goes */
+#define RXB_PREDICTIONS 0x132	/* 3 x 7 pads: what to play past each one's newest */
+#define RXB_NEXT_PAD_RNG_BITS 0x22E	/* u8: the random bits for our next pad */
+#define MSRB_SIZE 1030
 #define OSB_SIZE 42
 #define PLAYER_SETTINGS_SIZE 3264
 #define ROLLBACK_MAX_FRAMES 7
@@ -83,7 +89,7 @@ enum { MM_IDLE = 0, MM_INITIALIZING = 1, MM_MATCHMAKING = 2, MM_OPPONENT_CONNECT
 static u16 payload_size(u8 cmd)
 {
 	switch (cmd) {
-	case CMD_ONLINE_INPUTS: return 25;
+	case CMD_ONLINE_INPUTS: return 27;	/* 3.7.0: + input port, leaving */
 	case CMD_CAPTURE_SAVESTATE:
 	case CMD_LOAD_SAVESTATE: return 32;
 	case CMD_FIND_OPPONENT: return 19;
@@ -603,15 +609,36 @@ static void remote_sum(int remote, s32 *frame, u32 *sum)
  * desynced (after the longest rollbacks). The rest come in the next answers. */
 static void fill_remote_inputs(u8 *r, s32 frame, s32 finalized, int remotes)
 {
-	s32 nums[3], smallest;
+	s32 nums[3], smallest, latest = -1;
+	s32 live_cf = 0;
+	u32 live_cs = 0;
 	int i, k;
 	r[1] = (u8)remotes;
+	/* a player who left gets the newest live opponent's checksum, so the
+	 * game has an up-to-date one to compare (3.7.0) */
+	for (i = 0; i < remotes; i++) {
+		s32 cf;
+		u32 cs;
+		if (!so_np_player_active(so_np_remote_player_idx(i)))
+			continue;
+		if (so_np_remote_head_frame(i) > latest) {
+			latest = so_np_remote_head_frame(i);
+			remote_sum(i, &cf, &cs);
+			live_cf = cf;
+			live_cs = cs;
+		}
+	}
 	for (i = 0; i < 3; i++) {
 		nums[i] = frame;
 		if (i < remotes) {
 			s32 head = so_np_remote_head_frame(i), cf;
 			u32 cs;
-			remote_sum(i, &cf, &cs);
+			if (so_np_player_active(so_np_remote_player_idx(i))) {
+				remote_sum(i, &cf, &cs);
+			} else {
+				cf = live_cf;
+				cs = live_cs;
+			}
 			so_put_u32(r + 0x02 + i * 8, (u32)cf);
 			so_put_u32(r + 0x06 + i * 8, cs);
 			if (finalized > 0 && head > finalized + ROLLBACK_MAX_FRAMES - 1)
@@ -627,9 +654,19 @@ static void fill_remote_inputs(u8 *r, s32 frame, s32 finalized, int remotes)
 	so_put_u32(r + 0x26, (u32)smallest);
 	for (i = 0; i < remotes; i++) {
 		u8 *pads = r + 0x2A + i * ROLLBACK_MAX_FRAMES * PAD_FULL_SIZE;
+		u8 *predicted = r + RXB_PREDICTIONS + i * ROLLBACK_MAX_FRAMES * PAD_FULL_SIZE;
+		/* 9 bytes: the inputs and the RNG bits; byte 0x0B stays 0 (the
+		 * game's "roll back anyway" mark) */
 		for (k = 0; k < ROLLBACK_MAX_FRAMES; k++)
-			so_np_remote_pad(i, nums[i] - k, pads + k * PAD_FULL_SIZE);	/* 8 bytes; the rest stays 0 */
+			so_np_remote_pad(i, nums[i] - k, pads + k * PAD_FULL_SIZE);
+		so_put_u32(r + RXB_DESPAWN_FRAMES + i * 4, (u32)so_np_despawn_frame(i));
+		/* the frames past the newest: the newest again (no input
+		 * suggestions here) */
+		for (k = 0; k < ROLLBACK_MAX_FRAMES; k++)
+			memcpy(predicted + k * PAD_FULL_SIZE, pads, PAD_FULL_SIZE);
 	}
+	/* random bits for our next pad: opponents see them, so not so_random's */
+	r[RXB_NEXT_PAD_RNG_BITS] = so_entropy_byte();
 }
 
 /* fused.c: Slippi Dolphin's rounding of the fused multiply-adds */
@@ -849,6 +886,11 @@ static void on_online_inputs(const u8 *p)
 	t_lock = so_time_us() - t_in;
 	if (t_lock > x.game.max_lock_us)
 		x.game.max_lock_us = (u32)t_lock;
+	/* L+R+A+Start in Party: we leave, which the others take as a drop */
+	if (p[27] && so_np_status() == SO_NP_CONNECTED) {
+		so_log("exi: leaving the game");
+		so_np_force_disconnect(0);
+	}
 	if (so_np_status() != SO_NP_CONNECTED) {
 		so_client_unlock();
 		r[0] = RESP_DISCONNECTED;
@@ -868,6 +910,9 @@ static void on_online_inputs(const u8 *p)
 		return;
 	}
 	remotes = so_np_remote_count();
+	/* a dropped player's last input repeats once everyone has settled on
+	 * it: then they are never waited for */
+	so_np_fill_dropped(frame);
 	if (so_rollback_enabled()) {
 		/* Rollback: the game goes on with what has come, predicting the
 		 * rest, up to ROLLBACK_MAX_FRAMES ahead of the opponent; and stays
@@ -934,9 +979,24 @@ static void on_online_inputs(const u8 *p)
 		if (!x.stall_since_us) {
 			x.stall_since_us = now;
 		} else if (now - x.stall_since_us > STALL_LIMIT_US) {
-			so_log("exi: no input from the opponent for 7 s; disconnecting");
-			so_np_force_disconnect(0);
-			r[0] = RESP_DISCONNECTED;
+			/* 3.7.0: the players we wait on are dropped (the others are
+			 * told); with no one left, the game ends */
+			int dropped = 0;
+			for (i = 0; i < remotes; i++) {
+				u8 player = so_np_remote_player_idx(i);
+				if (so_np_player_active(player) && so_np_remote_head_frame(i) < frame) {
+					so_log("exi: no input from player %u for 7 s; dropping them", (unsigned)player);
+					so_np_force_disconnect_player(player);
+					dropped = 1;
+				}
+			}
+			if (!dropped) {
+				so_log("exi: stalled for 7 s; disconnecting");
+				so_np_force_disconnect(0);
+			}
+			x.stall_since_us = 0;
+			if (so_np_status() != SO_NP_CONNECTED)
+				r[0] = RESP_DISCONNECTED;
 		}
 	} else {
 		SoLocalPad pad;
@@ -1259,9 +1319,11 @@ static void on_get_match_state(void)
 				so_np_send_chat(SO_CHAT_DISABLED);
 				chat_id = 0;
 			}
+			/* the sender's port (with several opponents, theirs) */
+			chat_player = remotes == 1 ? x.remote_idx : from;
+		} else {
+			chat_player = x.local_idx;
 		}
-		if (remotes == 1)
-			chat_player = sent ? x.local_idx : x.remote_idx;
 		if (local_ready && remote_ready) {
 			int broken = check_rules(remotes);
 			if (broken) {
@@ -1353,6 +1415,12 @@ static void on_get_match_state(void)
 	so_game_string(error, 120, r + 0x165);
 	memcpy(r + 0x256, x.match_block, MATCH_BLOCK_SIZE);
 	r[0x3C1] = alt;
+	/* 3.7.0: each player's ranked info (0x3C2, 16 bytes each: left at 0,
+	 * as Ranked is not offered here) and whether they are a bot (0x402),
+	 * for the replay */
+	if (m)
+		for (i = 0; i < 4 && i < m->player_count; i++)
+			r[0x402 + i] = m->players[i].is_bot;
 }
 
 /* ---- the other commands --------------------------------------------------- */

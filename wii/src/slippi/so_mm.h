@@ -1,12 +1,14 @@
 /* slippi_online/so_mm.h
- * Matchmaking client: Slippi Dolphin's SlippiMatchmaking (Ishiiruka v3.6.4)
+ * Matchmaking client: Slippi Dolphin's SlippiMatchmaking (Ishiiruka v3.7.0)
  * as a non-blocking state machine.
  *
- * Protocol: ENet to the matchmaking server (mm.slippi.gg:43113), one JSON
- * text per reliable packet on channel 0. We send create-ticket; the server
- * answers create-ticket-resp, then get-ticket-resp once it has paired us.
- * The ENet host binds the port that P2P netplay will use afterwards, so the
- * server sees (and hole-punches) the right external port.
+ * First STUN, on the session's UDP socket (the port netplay will play on):
+ * binding requests to public STUN servers give this console's address and
+ * port as the internet sees them, and from two servers whether the NAT
+ * keeps one port ("cone") or not ("symmetric"). Then the matchmaking
+ * service session (so_mmws.c, a WebSocket on a thread of its own) joins the
+ * queue with them; while queued a STUN keepalive every 15 s holds the NAT's
+ * mapping open. The match message gives the players and their addresses.
  *
  * Driven from the network thread: so_mm_poll() never blocks. Not
  * thread-safe; the client serialises access.
@@ -66,48 +68,65 @@ typedef struct {
 
 typedef enum {
 	SO_MM_IDLE,
-	SO_MM_CONNECTING,	/* ENet connect to the server */
-	SO_MM_JOINING,	/* create-ticket sent */
+	SO_MM_STUN,	/* asking the STUN servers */
+	SO_MM_CONNECTING,	/* the service session is connecting */
 	SO_MM_SEARCHING,	/* in the queue */
-	SO_MM_LEAVING,	/* matched; disconnecting from the server */
 	SO_MM_MATCHED,	/* result ready; the socket is free for netplay */
 	SO_MM_ERROR,
 } SoMmState;
 
-/* Starts a search. `server` is the resolved matchmaking address; `port`
- * the local UDP port (netplay reuses it). Returns 0, or < 0 (with an error
- * message) when the ENet host cannot be created. */
-int so_mm_start(const SoConfig *config, const SoUser *user, const SoSearch *search, u32 server, u16 port);
+#define SO_STUN_SERVERS 4
+
+/* Where to reach the service and the STUN servers (so_client.c resolves
+ * them, with its lock dropped: DNS blocks). */
+typedef struct {
+	u32 mm_addr;
+	u32 stun_addr[SO_STUN_SERVERS];
+	u16 stun_port[SO_STUN_SERVERS];
+	int stun_count;
+} SoMmServers;
+
+/* Starts a search on the open session socket bound to `port`. Returns 0,
+ * or < 0 (with an error message). */
+int so_mm_start(const SoConfig *config, const SoUser *user, const SoSearch *search, const SoMmServers *servers,
+	u16 port);
 void so_mm_poll(void);
-/* Leaves the queue and frees the socket. */
+/* Leaves the queue. */
 void so_mm_stop(void);
 
 SoMmState so_mm_state(void);
-/* The error text shown to the player (the server's own text when it sent
+/* The error text shown to the player (the service's own text when it sent
  * one), valid in SO_MM_ERROR. */
 const char *so_mm_error(void);
 /* NULL before the first search. */
 const SoMatchResult *so_mm_result(void);
-/* After SO_MM_ERROR: the version the server said is current when it turned
- * the ticket down, or "". */
+/* After SO_MM_ERROR: the version the service said is current when it
+ * turned the search down, or "". */
 const char *so_mm_latest_version(void);
 u16 so_mm_port(void);
 
 /* ---- messages (so_mm_msg.c; no networking, unit-tested) ------------------ */
 
-/* Writes the create-ticket JSON. `lan_address` is "a.b.c.d:port". Returns
- * the length, or -1 when it does not fit. */
-int so_mm_build_ticket(char *out, int size, const SoConfig *config, const SoUser *user,
-	const SoSearch *search, const char *lan_address);
+/* What the STUN servers said */
+typedef struct {
+	int answered[2];
+	u32 addr[2];
+	u16 port[2];
+} SoStunResult;
 
-/* Checks a create-ticket-resp. Returns 0 when the ticket was accepted, or
- * < 0 with `error` set to the text for the player. */
-int so_mm_parse_ticket_reply(const char *text, u32 len, char *error, int error_size);
+/* Writes the join message. `lan_address` is "a.b.c.d:port" or "".
+ * Returns the length, or -1 when it does not fit. */
+int so_mm_build_join(char *out, int size, const SoConfig *config, const SoUser *user, const SoSearch *search,
+	u16 local_port, const char *lan_address, const SoStunResult *stun);
 
-/* Parses a get-ticket-resp into `result`. Returns 0, or < 0 with `error`
- * set (the server's text when it sent one; `latest_version` then receives
- * its latestVersion, if any). */
-int so_mm_parse_match(const char *text, u32 len, SoMatchResult *result, char *error, int error_size,
-	char *latest_version, int latest_version_size);
+#define SO_STUN_REQUEST_LEN 20
+void so_stun_request(u8 out[SO_STUN_REQUEST_LEN], const u8 txid[12]);
+/* Reads a binding success response for `txid`: the mapped address (network
+ * byte order) and port. Returns 0, or < 0 when it is not one. */
+int so_stun_parse(const u8 *msg, u32 len, const u8 txid[12], u32 *addr, u16 *port);
+
+/* Parses the match message into `result`. Returns 0, or < 0 with `error`
+ * set. */
+int so_mm_parse_match(const char *text, u32 len, SoMatchResult *result, char *error, int error_size);
 
 #endif

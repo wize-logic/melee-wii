@@ -1,10 +1,11 @@
 /* slippi_online/so_netplay.h
  * Peer-to-peer netplay: Slippi Dolphin's SlippiNetplayClient (Ishiiruka
- * v3.6.4) in C, so the Wii speaks exactly what a PC running Slippi expects.
+ * v3.7.0) in C, so the Wii speaks exactly what a PC running Slippi expects.
  *
  * Wire format (SFML packets: big-endian, a u8 message id first):
  *   0x80 pad          s32 frame, u8 player, s32 checksum frame, u32 checksum,
- *                     then 8-byte pads newest first   unsequenced, channel 1
+ *                     then 9-byte pads newest first   unsequenced, channel 1
+ *                     (8 input bytes, then the RNG bits)
  *   0x81 pad ack      s32 frame, u8 player            unsequenced, channel 2
  *   0x82 selections   u8 char, u8 color, u8 char selected, u8 player,
  *                     u16 stage, u8 stage selected, u32 rng offset, u8 team,
@@ -12,6 +13,9 @@
  *   0x83 connection selected                           reliable, channel 0
  *   0x84 chat         s32 message id, u8 player        reliable, channel 0
  *   0x85 game prep step, 0x86 synced game state        reliable, channel 0
+ *   0x87 pad suggestion (a PC's mid-frame hint)  ignored
+ *   0x88 player drop  u8 sender, u8 dropped, s32 last frame, u8 count,
+ *                     count 9-byte pads newest first  reliable, channel 0
  *
  * Every peer connects to every other peer at the same time (that is what
  * hole-punches the NATs), so a peer can end up with two connections to one
@@ -76,6 +80,7 @@ typedef struct {
 	u32 pad_packets_sent, pad_packets_received, pad_packets_stale, pad_packets_bad;
 	u32 acks_sent, acks_received;
 	u32 resends;	/* pad packets sent without a new pad */
+	u32 suggestions_ignored;	/* 3.7.0 input suggestions (0x87) */
 	u32 test_dropped;
 } SoNpStats;
 
@@ -152,6 +157,14 @@ const SoSyncedState *so_np_remote_synced_state(int remote);
 
 /* Disconnects every opponent and tells them why. */
 void so_np_force_disconnect(u32 reason);
+/* Drops one opponent (a 7 s stall on them): the others are told, and the
+ * game goes on without them (3.7.0's ForceDisconnectPlayer) */
+void so_np_force_disconnect_player(u8 player_idx);
+/* The frame a dropped opponent's fighter despawns on, 0 while they play or
+ * until the reports about them are in (3.7.0) */
+s32 so_np_despawn_frame(int remote);
+/* Repeats each settled dropped opponent's last input up to `frame` */
+void so_np_fill_dropped(s32 frame);
 
 void so_np_stats(SoNpStats *out);
 

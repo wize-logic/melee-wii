@@ -100,6 +100,55 @@ int so_remote_pads_get(const SoRemotePads *q, s32 frame, u8 *out)
 	return 0;
 }
 
+static void put_frame(SoRemotePads *q, s32 frame, const u8 *pad)
+{
+	memcpy(q->pads[(u32)frame % SO_REMOTE_PAD_RING], pad, SO_PAD_SIZE);
+	if (q->count < SO_REMOTE_PAD_RING)
+		q->count++;
+	q->head_frame = frame;
+}
+
+int so_remote_pads_add_report(SoRemotePads *q, s32 last_frame, u8 count, const u8 *pads)
+{
+	s64 missing = (s64)last_frame - (s64)q->head_frame, i;
+	if (missing > SO_PADS_MAX_PER_PACKET)
+		return -1;
+	for (i = missing - 1; i >= 0; i--) {
+		u8 pad[SO_PAD_SIZE];
+		memset(pad, 0, sizeof(pad));
+		if (i < count)
+			memcpy(pad, pads + i * SO_PAD_SIZE, SO_PAD_SIZE);
+		else if (q->count > 0)
+			memcpy(pad, q->pads[(u32)q->head_frame % SO_REMOTE_PAD_RING], SO_PAD_SIZE);
+		put_frame(q, (s32)(last_frame - i), pad);
+	}
+	return missing > 0 ? (int)missing : 0;
+}
+
+void so_remote_pads_fill(SoRemotePads *q, s32 frame)
+{
+	if (q->count == 0) {
+		u8 zero[SO_PAD_SIZE];
+		memset(zero, 0, sizeof(zero));
+		q->head_frame = -1;	/* (put_frame sets frame 0) */
+		put_frame(q, 0, zero);
+	}
+	while (q->head_frame < frame) {
+		u8 pad[SO_PAD_SIZE];
+		memcpy(pad, q->pads[(u32)q->head_frame % SO_REMOTE_PAD_RING], SO_PAD_SIZE);
+		put_frame(q, q->head_frame + 1, pad);
+	}
+}
+
+int so_remote_pads_report(const SoRemotePads *q, u8 *out, int max, s32 *newest_frame)
+{
+	int n = (int)q->count < max ? (int)q->count : max, i;
+	*newest_frame = q->count ? q->head_frame : 0;
+	for (i = 0; i < n; i++)
+		memcpy(out + i * SO_PAD_SIZE, q->pads[(u32)(q->head_frame - i) % SO_REMOTE_PAD_RING], SO_PAD_SIZE);
+	return n;
+}
+
 /* ---- ack timers ---------------------------------------------------------- */
 
 void so_ack_timers_reset(SoAckTimers *t)

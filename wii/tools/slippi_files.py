@@ -39,22 +39,21 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 from vcdiff import decode  # noqa: E402
+import hsd_link  # noqa: E402
 
 # Downloads are kept in build/slippi-release.
 CACHE = HERE.parents[1] / 'build/slippi-release'
 
 # The Slippi Dolphin releases PC players run, and their files' hashes. The
-# codeset is the stable one (Slippi Launcher's default, 3.6.4, the version the
-# Wii reports to matchmaking); it differs from mainline beta.19's only in
-# cosmetic code (delay text, desync sound, a results screen hook, replay
-# version 3.19.1). The game files are byte-identical in both.
-RELEASE = 'v4.0.0-mainline-beta.19'
+# codeset is the stable one (Slippi Launcher's default, 3.7.0, the version the
+# Wii reports to matchmaking: slippi-ssbm-asm d0ce23a91); mainline beta.21 has
+# the same codeset and game files.
+RELEASE = 'v4.0.0-mainline-beta.21'
 RAW = f'https://raw.githubusercontent.com/project-slippi/dolphin/{RELEASE}/Data/Sys'
-STABLE_RAW = 'https://raw.githubusercontent.com/project-slippi/Ishiiruka/v3.6.4/Data/Sys'
-CODESET = ('GameSettings/GALE01r2.ini', 'b30b294df5c0d92deb3129afdfbc894a48aabeb1bce0cf92cce8c4e5408a2587')
+STABLE_RAW = 'https://raw.githubusercontent.com/project-slippi/Ishiiruka/v3.7.0/Data/Sys'
+CODESET = ('GameSettings/GALE01r2.ini', '2392fbc9da281eb8c8ceb5aa13222d45ea83e3cfd38389fec6e0705aead49609')
 GAME_FILES = {
-    'GameSetup.dat': '2c7842f8864c962ea0e8b9e629552b36e2669b739c86d17ba5dae53d75ed9acc',
-    'GameSetup_gui.dat': 'aa083e7ec6a7ad96c32efb474b6915242aeb0627c2fa6369b205783b844d701e',
+    'GameSetup.dat': '7b3869a1f3097f6cce5a740f289a0278f5fdb5c55f199eab1df703d5266faa07',
     'MnExtAll.dat.diff': 'b6df247ddf12d0118d4b1deaf1d3cf8878ebb4d60b29fda7ad6a324246b05e22',
     'MnExtAll.usd.diff': 'c729c61a65d92aeaf4ab15ca7ec5a40ead336055b0defce9c74503e2651c9b18',
     'MnMaAll.dat.diff': '4f38bfa9716064fd59315c26210ec6383b62ee0d4445beb9b6cca1f09134ea75',
@@ -68,7 +67,15 @@ GAME_FILES = {
     'SdSlChr.dat.diff': '0194bcbb4fd26df4e499edd52ea7a64743a493515b07d6114cf378c8720a9405',
     'SdSlChr.usd.diff': 'fde2f393c405244f9100a0522a769d4fcce9e892dd9b87b0e0c38670ef132f38',
     'SlippiCSS.dat': 'f864eed3f494f1a1710760973f25a7f5be4bb3dc4fc4734c2a721ca62f4916f3',
-    'slpCSS.dat': '3b1a3f254b37cf5ce4f56b38d237d9809d0b11e72d05320f0e56fa3abd7a1692',
+}
+
+# Since 3.7.0 these hold references to the player's disc instead of
+# Nintendo's art, which Slippi Dolphin fills in as it serves them
+# (hsd_link.py): the release ships each as a patch against the disc files
+# it needs.
+LINKED_FILES = {
+    'GameSetup_gui.dat': '824002d8835bebec42caf637b948b4da6178e4341668b30e3d3a2122c892892b',
+    'SlippiCSS_gui.dat': 'fe96bb798206d8090510292359fb65350da3f812ef5dbf44aa30b9f647d93e01',
 }
 
 # Code blocks left out, by the source the codeset names for them: Dolphin
@@ -322,6 +329,14 @@ def make_files(disc, root, log=print):
                 raise SetupError(f'{target}: the patched file is not a valid archive '
                                  '(is this an unmodified NTSC 1.02 disc?)')
             name = target
+        (files_out / name).write_bytes(data)
+        made += 1
+    for name, sha in LINKED_FILES.items():
+        linked = fetch(f'GameFiles/GALE01/{name}', sha, CACHE / 'GameFiles' / name, log=log)
+        try:
+            data, _, _ = hsd_link.make_patch(linked, disc.file)
+        except ValueError as e:
+            raise SetupError(f'{name}: {e} (is this an unmodified NTSC 1.02 disc?)')
         (files_out / name).write_bytes(data)
         made += 1
     log(f'  {made} menu files')

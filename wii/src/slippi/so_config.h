@@ -17,13 +17,15 @@
 #define SO_TEST_USER_PATH "/slippi/test-user.json"	/* the dummy test account */
 #define SO_CONFIG_PATH "/slippi/config.ini"
 
-/* The netplay version Slippi Dolphin (Ishiiruka) reports; the server only
- * pairs compatible versions. A newer one replaces it on its own: user.json's
- * latestVersion at start-up, and the server's when it turns a ticket down as
- * outdated (so_client.c searches again with it). */
-#define SO_APP_VERSION_DEFAULT "3.6.4"
-#define SO_MM_HOST_DEFAULT "mm.slippi.gg"
-#define SO_MM_PORT_DEFAULT 43113
+/* The Slippi Dolphin (Ishiiruka) version whose online play this client
+ * implements, as it tells the matchmaking service; the service only pairs
+ * players of one version. It is never raised on the service's word: a
+ * newer Slippi needs a new release (the launcher's updates fetch it). */
+#define SO_APP_VERSION_DEFAULT "3.7.0"
+/* The matchmaking service (3.7.0: a WebSocket over TLS) */
+#define SO_MM_HOST_DEFAULT "matchmaking.slippi.gg"
+#define SO_MM_PORT_DEFAULT 443
+#define SO_MM_PATH_DEFAULT "/v1/queue"
 
 typedef struct {
 	char uid[64];
@@ -37,6 +39,8 @@ typedef struct {
 	char user_path[64];	/* the account file (tests point it at a dummy) */
 	char mm_host[64];
 	u16 mm_port;
+	char mm_path[64];
+	u8 mm_tls;	/* 0: ws:// (a test service) */
 	u16 local_port;	/* 0: random in 41000-50999, as Dolphin picks */
 	char app_version[24];
 	/* The online input delay in frames for the next game: the override, or

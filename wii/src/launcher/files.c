@@ -4,8 +4,11 @@
  *                          music hooks)
  *   files/<name>           Slippi's menu files, served to the game over EXI
  *   patches/<name>.diff    Slippi's patches for the disc's menu files, and
- *   patches/manifest.txt   what each file must be: "copy" (shipped as is) or
- *                          "patch" (made here from the disc), size, CRC-32
+ *   patches/manifest.txt   what each file must be: "copy" (shipped as is),
+ *                          "patch" (made here from the disc file of its
+ *                          name), or "link" (made from the disc files it
+ *                          lists, one after the other: Slippi 3.7.0's files
+ *                          that refer to the disc's art), size, CRC-32
  *   user.json              the account (Slippi Launcher's)
  *   rumble.txt, config.ini   the online client's settings
  *
@@ -34,6 +37,7 @@ int melee_wii_disc_read(unsigned int offset, void* buf, unsigned int len);
 typedef struct Entry {
     int patch;      /* made from the disc */
     char path[48];  /* in ROOT */
+    char sources[160]; /* "link": the disc files, '+' between; "": the target's own */
     unsigned long size;
     unsigned long crc;
 } Entry;
@@ -96,8 +100,13 @@ static int read_manifest(Entry* e, int max)
         if (line[0] == '#') {
             continue;
         }
-        if (sscanf(line, "%7s %47s %lu %lx", kind, e[n].path, &e[n].size, &e[n].crc) == 4) {
-            e[n].patch = strcmp(kind, "patch") == 0;
+        e[n].sources[0] = '\0';
+        if (sscanf(line, "%7s %47s %lu %lx %159s", kind, e[n].path, &e[n].size, &e[n].crc, e[n].sources) >= 4) {
+            int link = strcmp(kind, "link") == 0;
+            e[n].patch = link || strcmp(kind, "patch") == 0;
+            if (!link) {
+                e[n].sources[0] = '\0';
+            }
             n++;
         }
     }
@@ -185,6 +194,29 @@ int slippi_account(char* name, int name_size, char* code, int code_size)
     return code[0] != '\0' ? 0 : -1;
 }
 
+/* The disc files `list` names ('+' between), one after the other: their
+ * total size, and with `out` their bytes */
+static int disc_sources(const char* list, unsigned int* total, unsigned char* out, char* error, int error_size)
+{
+    char names[160];
+    unsigned int at = 0;
+    snprintf(names, sizeof(names), "%s", list);
+    for (char* name = strtok(names, "+"); name != NULL; name = strtok(NULL, "+")) {
+        unsigned int offset, size;
+        if (melee_wii_disc_file(name, &offset, &size) < 0) {
+            snprintf(error, error_size, "The disc has no %s: is it Melee 1.02 (GALE01, revision 2)?", name);
+            return -1;
+        }
+        if (out != NULL && melee_wii_disc_read(offset, out + at, size) < 0) {
+            snprintf(error, error_size, "Could not read %s from the disc", name);
+            return -1;
+        }
+        at += size;
+    }
+    *total = at;
+    return 0;
+}
+
 int slippi_prepare(void (*progress)(const char* name, int done, int total, void* ctx), void* ctx,
                    char* error, int error_size)
 {
@@ -202,7 +234,7 @@ int slippi_prepare(void (*progress)(const char* name, int done, int total, void*
     }
     for (int i = 0; i < n; i++) {
         const char* name = base_name(e[i].path);
-        unsigned int offset, disc_size;
+        unsigned int disc_size;
         unsigned long diff_size;
         unsigned char *source, *diff, *out;
         const char* why = NULL;
@@ -216,8 +248,7 @@ int slippi_prepare(void (*progress)(const char* name, int done, int total, void*
             continue;
         }
         progress(name, done, total, ctx);
-        if (melee_wii_disc_file(name, &offset, &disc_size) < 0) {
-            snprintf(error, error_size, "The disc has no %s: is it Melee 1.02 (GALE01, revision 2)?", name);
+        if (disc_sources(e[i].sources[0] ? e[i].sources : name, &disc_size, NULL, error, error_size) < 0) {
             return -1;
         }
         snprintf(path, sizeof(path), "%s/patches/%s.diff", ROOT, name);
@@ -226,7 +257,7 @@ int slippi_prepare(void (*progress)(const char* name, int done, int total, void*
             snprintf(error, error_size, "Slippi's patch for %s is missing", name);
             return -1;
         }
-        source = memalign(32, disc_size);
+        source = memalign(32, disc_size ? disc_size : 32);
         target = vcdiff_target_size(diff, diff_size, &why);
         out = target > 0 ? memalign(32, (size_t) target) : NULL;
         if (source == NULL || out == NULL) {
@@ -236,7 +267,7 @@ int slippi_prepare(void (*progress)(const char* name, int done, int total, void*
             snprintf(error, error_size, "No memory to patch %s", name);
             return -1;
         }
-        if (melee_wii_disc_read(offset, source, disc_size) < 0 ||
+        if (disc_sources(e[i].sources[0] ? e[i].sources : name, &disc_size, source, error, error_size) < 0 ||
             vcdiff_decode(source, disc_size, diff, diff_size, out, (size_t) target, &why) < 0 ||
             (unsigned long) target != e[i].size ||
             vcdiff_crc32(0, out, (size_t) target) != e[i].crc)

@@ -1,75 +1,140 @@
 /* slippi_online/so_mm_msg.c
- * Matchmaking messages (see so_mm.h): building create-ticket and reading
- * the server's replies, following SlippiMatchmaking::startMatchmaking and
- * handleMatchmaking.
+ * Matchmaking messages (see so_mm.h): the join message, STUN, and reading
+ * the match, following Slippi Dolphin 3.7.0's SlippiMatchmaking and its
+ * Rust matchmaking crate (protocol.rs, stun.rs).
  */
 #include "so_mm.h"
 #include "so_json.h"
 #include "so_util.h"
 #include "string.h"
 
-int so_mm_build_ticket(char *out, int size, const SoConfig *config, const SoUser *user,
-	const SoSearch *search, const char *lan_address)
+/* The connect code as the game wrote it: an array of byte values */
+static void write_code(SoJsonWriter *w, const SoSearch *search)
+{
+	int i;
+	so_jw_array_begin(w);
+	for (i = 0; i < search->connect_code_len; i++)
+		so_jw_long(w, search->connect_code[i]);
+	so_jw_array_end(w);
+}
+
+static void write_candidate(SoJsonWriter *w, u32 addr, u16 port, const char *type)
+{
+	char ip[16];
+	so_format_ipv4(addr, ip, sizeof(ip));
+	so_jw_object_begin(w);
+	so_jw_key(w, "ip");
+	so_jw_string(w, ip);
+	so_jw_key(w, "port");
+	so_jw_long(w, port);
+	so_jw_key(w, "type");
+	so_jw_string(w, type);
+	so_jw_object_end(w);
+}
+
+int so_mm_build_join(char *out, int size, const SoConfig *config, const SoUser *user, const SoSearch *search,
+	u16 local_port, const char *lan_address, const SoStunResult *stun)
 {
 	SoJsonWriter w;
-	int i;
-	/* Keys in sorted order, as nlohmann::json writes them. */
+	u32 lan_ip;
+	u16 lan_port;
+	int have_lan = lan_address[0] && so_parse_endpoint(lan_address, &lan_ip, &lan_port) == 0;
+	const char *nat = "unknown";
+	if (stun->answered[0] && stun->answered[1])
+		nat = stun->addr[0] == stun->addr[1] && stun->port[0] == stun->port[1] ? "cone" : "symmetric";
+	/* (as protocol.rs's Join, in its order) */
 	so_jw_init(&w, out, size);
 	so_jw_object_begin(&w);
-	so_jw_key(&w, "appVersion");
-	so_jw_string(&w, config->app_version);
-	so_jw_key(&w, "ipAddressLan");
-	so_jw_string(&w, lan_address);
-	so_jw_key(&w, "search");
-	so_jw_object_begin(&w);
-	so_jw_key(&w, "connectCode");
-	so_jw_array_begin(&w);
-	for (i = 0; i < search->connect_code_len; i++)
-		so_jw_long(&w, search->connect_code[i]);
-	so_jw_array_end(&w);
-	so_jw_key(&w, "mode");
-	so_jw_long(&w, search->mode);
-	so_jw_object_end(&w);
 	so_jw_key(&w, "type");
-	so_jw_string(&w, "create-ticket");
+	so_jw_string(&w, "join");
 	so_jw_key(&w, "user");
 	so_jw_object_begin(&w);
+	so_jw_key(&w, "uid");
+	so_jw_string(&w, user->uid);
+	so_jw_key(&w, "playKey");
+	so_jw_string(&w, user->play_key);
 	so_jw_key(&w, "connectCode");
 	so_jw_string(&w, user->connect_code);
 	so_jw_key(&w, "displayName");
 	so_jw_string(&w, user->display_name);
-	so_jw_key(&w, "playKey");
-	so_jw_string(&w, user->play_key);
-	so_jw_key(&w, "uid");
-	so_jw_string(&w, user->uid);
 	so_jw_object_end(&w);
+	so_jw_key(&w, "search");
+	so_jw_object_begin(&w);
+	so_jw_key(&w, "mode");
+	so_jw_long(&w, search->mode);
+	so_jw_key(&w, "connectCode");
+	write_code(&w, search);
+	so_jw_object_end(&w);
+	so_jw_key(&w, "appVersion");
+	so_jw_string(&w, config->app_version);
+	/* the port the service should tell the others: the one STUN saw */
+	so_jw_key(&w, "port");
+	so_jw_long(&w, stun->answered[0] ? stun->port[0] : local_port);
+	so_jw_key(&w, "ipAddressLan");
+	so_jw_string(&w, lan_address);
+	if (stun->answered[0] || have_lan) {
+		so_jw_key(&w, "candidates");
+		so_jw_array_begin(&w);
+		if (stun->answered[0])
+			write_candidate(&w, stun->addr[0], stun->port[0], "srflx");
+		if (have_lan)
+			write_candidate(&w, lan_ip, lan_port, "host");
+		so_jw_array_end(&w);
+	}
+	so_jw_key(&w, "natType");
+	so_jw_string(&w, nat);
 	so_jw_object_end(&w);
 	return so_jw_finish(&w);
 }
 
-/* Parses the reply and checks its type; on failure sets `error`. */
-static int open_reply(const char *text, u32 len, const char *type, SoJson *doc, char *error, int error_size,
-	const char *invalid_text)
+/* ---- STUN (RFC 5389 binding; matchmaking/src/stun.rs) -------------------- */
+
+#define STUN_COOKIE 0x2112A442u
+
+void so_stun_request(u8 out[SO_STUN_REQUEST_LEN], const u8 txid[12])
 {
-	char got[32];
-	if (so_json_parse(doc, text, len) < 0 || so_json_type(doc) != SO_JSON_OBJECT) {
-		strlcpy(error, invalid_text, error_size);
-		return -1;
-	}
-	so_json_get_string(doc, "type", got, sizeof(got), "");
-	if (strcmp(got, type) != 0) {
-		strlcpy(error, invalid_text, error_size);
-		return -1;
-	}
-	so_json_get_string(doc, "error", error, error_size, "");
-	return error[0] ? -2 : 0;
+	so_put_u16(out, 0x0001);	/* binding request */
+	so_put_u16(out + 2, 0);	/* no attributes */
+	so_put_u32(out + 4, STUN_COOKIE);
+	memcpy(out + 8, txid, 12);
 }
 
-int so_mm_parse_ticket_reply(const char *text, u32 len, char *error, int error_size)
+int so_stun_parse(const u8 *msg, u32 len, const u8 txid[12], u32 *addr, u16 *port)
 {
-	SoJson doc;
-	return open_reply(text, len, "create-ticket-resp", &doc, error, error_size,
-		"Invalid response when joining mm queue");
+	u32 off = 20, end;
+	int found = 0;
+	if (len < 20 || so_get_u16(msg) != 0x0101 || so_get_u32(msg + 4) != STUN_COOKIE ||
+		memcmp(msg + 8, txid, 12) != 0)
+		return -1;
+	end = 20 + so_get_u16(msg + 2);
+	if (end > len)
+		end = len;
+	while (off + 4 <= end) {
+		u16 type = so_get_u16(msg + off), alen = so_get_u16(msg + off + 2);
+		const u8 *v = msg + off + 4;
+		if (off + 4 + alen > end)
+			break;
+		if ((type == 0x0020 || (type == 0x0001 && !found)) && alen >= 8 && v[1] == 0x01) {
+			u16 p = so_get_u16(v + 2);
+			u32 a = so_get_u32(v + 4);
+			if (type == 0x0020) {
+				p ^= (u16)(STUN_COOKIE >> 16);
+				a ^= STUN_COOKIE;
+			}
+			*port = p;
+			/* (network byte order is the Wii's own) */
+			{
+				u8 b[4];
+				so_put_u32(b, a);
+				memcpy(addr, b, 4);
+			}
+			found = type == 0x0020 ? 2 : 1;
+			if (found == 2)
+				break;
+		}
+		off += 4 + ((alen + 3u) & ~3u);
+	}
+	return found ? 0 : -2;
 }
 
 /* "a.b.c.d:port" -> the part before the colon. */
@@ -105,22 +170,20 @@ static void read_player(const SoJson *el, SoMmPlayer *p)
 	}
 }
 
-int so_mm_parse_match(const char *text, u32 len, SoMatchResult *result, char *error, int error_size,
-	char *latest_version, int latest_version_size)
+int so_mm_parse_match(const char *text, u32 len, SoMatchResult *result, char *error, int error_size)
 {
 	static const u16 default_stages[] = { 0x3, 0x8, 0x1C, 0x1F, 0x20 };
 	SoJson doc, players, stages, el;
 	char local_external[24] = "", address[32], host[24];
-	int i, n, res, found_local = 0;
+	int i, n, found_local = 0;
 
 	memset(result, 0, sizeof(*result));
-	latest_version[0] = '\0';
-	res = open_reply(text, len, "get-ticket-resp", &doc, error, error_size,
-		"Invalid response when getting mm status");
-	if (res == -2)
-		so_json_get_string(&doc, "latestVersion", latest_version, latest_version_size, "");
-	if (res < 0)
-		return res;
+	/* (3.7.0's handleMatchmaking no longer checks the type: the session
+	 * hands over only the match message) */
+	if (so_json_parse(&doc, text, len) < 0 || so_json_type(&doc) != SO_JSON_OBJECT) {
+		strlcpy(error, "Invalid response when getting mm status", error_size);
+		return -1;
+	}
 
 	so_json_get_string(&doc, "matchId", result->match_id, sizeof(result->match_id), "");
 

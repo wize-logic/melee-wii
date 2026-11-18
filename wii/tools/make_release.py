@@ -82,6 +82,10 @@ Reduction" (Dolphin-only), as a console needs:
     https://github.com/project-slippi/Ishiiruka ({stable}, Data/Sys/GameSettings/GALE01r2.ini)
   - files/, patches/: Slippi Dolphin's game files and patches (GPLv2+), from
     https://github.com/project-slippi/dolphin ({release}, Data/Sys/GameFiles/GALE01/)
+  - patches/GameSetup_gui.dat.diff, patches/SlippiCSS_gui.dat.diff: Slippi's
+    files of those names, which refer to art on your disc instead of holding
+    it, made into patches against the disc files they refer to (every byte
+    from the disc is copied from your disc, as Slippi Dolphin fills them in)
 The launcher applies the patches on the Wii to your own Melee disc; no Melee
 files are included.
 """
@@ -121,7 +125,8 @@ def main():
     disc = slippi_files.open_disc(args.iso)
     slippi = 'apps/melee/slippi'
     shipped, manifest = {}, [f'# Melee for the Wii {v}: what each file must be (kind, path in {slippi}/, size, CRC-32).',
-                             '# "patch": made on the Wii from the disc with patches/<name>.diff; "copy": shipped.']
+                             '# "patch": made on the Wii from the disc with patches/<name>.diff; "copy": shipped;',
+                             '# "link": made with patches/<name>.diff from the disc files listed (one after the other).']
     manifest.append(f'copy netplay.gct {len(gct)} {zlib.crc32(gct):08x}')
     shipped[f'{slippi}/netplay.gct'] = gct
     for name, sha in slippi_files.GAME_FILES.items():
@@ -134,6 +139,13 @@ def main():
         else:
             manifest.append(f'copy files/{name} {len(data)} {zlib.crc32(data):08x}')
             shipped[f'{slippi}/files/{name}'] = data
+    for name, sha in slippi_files.LINKED_FILES.items():
+        linked = slippi_files.fetch(f'GameFiles/GALE01/{name}', sha, slippi_files.CACHE / 'GameFiles' / name)
+        made, sources, delta = slippi_files.hsd_link.make_patch(linked, disc.file)
+        source = b''.join(disc.file(n) for n in sources)
+        assert slippi_files.decode(source, delta) == made
+        manifest.append(f'link files/{name} {len(made)} {zlib.crc32(made):08x} {"+".join(sources)}')
+        shipped[f'{slippi}/patches/{name}.diff'] = delta
     shipped[f'{slippi}/patches/manifest.txt'] = ('\n'.join(manifest) + '\n').encode()
 
     out_dir = Path(args.out)

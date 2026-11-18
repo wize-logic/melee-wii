@@ -1,7 +1,7 @@
 /* slippi_online/so_pads.h
  * The bookkeeping behind Slippi's pad exchange, without any networking, so it
  * can be unit-tested on a PC. Each piece mirrors a part of Slippi Dolphin's
- * SlippiNetplayClient (Ishiiruka v3.6.4):
+ * SlippiNetplayClient (Ishiiruka v3.7.0):
  *
  *   SoLocalPads   localPadQueue: our pads not yet acked by every peer, sent
  *                 newest first in each pad packet.
@@ -19,7 +19,10 @@
 
 #include "global.h"
 
-#define SO_PAD_SIZE 8	/* bytes of one pad on the wire */
+/* Bytes of one pad on the wire (3.7.0's SLIPPI_PAD_WIRE_SIZE): the 8 input
+ * bytes, then the random bits the game mixes into the RNG seed */
+#define SO_PAD_SIZE 9
+#define SO_PAD_INPUT_SIZE 8
 #define SO_PADS_MAX_PER_PACKET 128	/* Dolphin rejects packets with more */
 #define SO_FRAME_US 16683	/* one frame at 59.94 Hz */
 
@@ -77,6 +80,22 @@ int so_remote_pads_add(SoRemotePads *q, s32 newest_frame, const u8 *pads, u32 pa
 /* Copies the pad for `frame`; returns 0, or -1 if it has not arrived (or
  * has left the ring). */
 int so_remote_pads_get(const SoRemotePads *q, s32 frame, u8 *out);
+
+/* A dropped player's inputs (3.7.0's player drop reports, so_netplay.c):
+ *
+ * so_remote_pads_add_report: the report's `count` pads, newest first, the
+ * newest for `last_frame`: the frames after the head are added. Returns
+ * the frames added, or -1 when the report is more than 128 frames ahead
+ * (AddPlayerDropReportInputs). A frame the report lacks repeats the head.
+ *
+ * so_remote_pads_fill: repeats the newest pad up to `frame`, from a zero
+ * pad at frame 0 when there is none (FillDroppedPlayerInputs).
+ *
+ * so_remote_pads_report: writes up to `max` of the newest pads, newest
+ * first; returns how many, and the newest one's frame (0 for none). */
+int so_remote_pads_add_report(SoRemotePads *q, s32 last_frame, u8 count, const u8 *pads);
+void so_remote_pads_fill(SoRemotePads *q, s32 frame);
+int so_remote_pads_report(const SoRemotePads *q, u8 *out, int max, s32 *newest_frame);
 
 /* ---- ack timers ---------------------------------------------------------- */
 

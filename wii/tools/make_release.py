@@ -2,7 +2,7 @@
 """Makes the release zip of Melee for the Wii: the files to put on the SD card.
 
     cmake --build --preset wii                                   # build/wii/melee.dol
-    python3 wii/tools/make_release.py --iso Melee.iso            # build/release/melee-wii-v1.0.0.zip
+    python3 wii/tools/make_release.py --iso Melee.iso            # build/release/melee-wii-v1.1.0.zip
 
 The zip mirrors the SD card (extract it onto the card):
 

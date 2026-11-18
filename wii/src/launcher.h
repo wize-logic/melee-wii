@@ -6,7 +6,7 @@
 
 #include <stddef.h>
 
-#define MELEE_WII_VERSION "1.0.0"
+#define MELEE_WII_VERSION "1.1.0"
 
 enum { LAUNCH_MELEE, LAUNCH_ONLINE, LAUNCH_MOD };
 

@@ -275,7 +275,7 @@ GitHub (pinned and checked by SHA-256 in `wii/tools/slippi_files.py`). Your disc
 the patched files' checksums; nothing of it goes in.
 
 ```sh
-python3 wii/tools/make_release.py --iso Melee.iso      # build/release/melee-wii-v1.0.0.zip
+python3 wii/tools/make_release.py --iso Melee.iso      # build/release/melee-wii-v1.1.0.zip
 ```
 
 The version is `MELEE_WII_VERSION` in `wii/src/launcher.h`.

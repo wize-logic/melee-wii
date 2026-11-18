@@ -189,6 +189,7 @@ static struct {
 	u16 pool[MAX_STAGES];
 	int pool_count;
 	u8 sent_chat;	/* remote_sent_chat_message_id */
+	char forced_error[64];	/* forcedError: shown until the lobby ends */
 
 	s32 last_frame;	/* of the previous ONLINE_INPUTS */
 	int dummies_sent;	/* the delay frames' empty pads, this game */
@@ -333,7 +334,32 @@ static void cleanup(void)
 	x.pool_count = 0;
 	x.have_client = 0;
 	x.sent_chat = 0;
+	x.forced_error[0] = '\0';
 	x.last_frame = 0;	/* the next frame 1 starts a game */
+}
+
+/* ---- the rules' characters and stages (as Dolphin) -------------------------
+ * Ranked, Unranked and Party have fixed rules: the 26 regular characters and
+ * the stages the server allows (the default list before a match). Teams
+ * allows the regular characters only. Our own bad pick is an error before
+ * queueing and ends the lobby with that error; someone else's bad pick, or a
+ * stage that is not allowed, ends the lobby quietly, as Dolphin's peers do. */
+#define REGULAR_CHARACTERS 26
+#define NOT_ALLOWED_CHARACTER "The character you selected is not allowed in this mode"
+#define NOT_ALLOWED_STAGE "The stage being requested is not allowed in this mode"
+
+static int fixed_rules(u8 mode)
+{
+	return mode == SO_MODE_RANKED || mode == SO_MODE_UNRANKED || mode == SO_MODE_PARTY;
+}
+
+static int stage_allowed(u16 stage)
+{
+	int i;
+	for (i = 0; i < x.allowed_count; i++)
+		if (x.allowed[i] == stage)
+			return 1;
+	return 0;
 }
 
 /* ---- the input delay changed during a game ---------------------------------
@@ -1030,17 +1056,13 @@ static const u8 team_splits[6][4] = {
 	{ 0, 0, 1, 1 }, { 1, 1, 0, 0 }, { 0, 1, 1, 0 }, { 1, 0, 0, 1 }, { 0, 1, 0, 1 }, { 1, 0, 1, 0 },
 };
 
-/* Writes the per-game fields into the match block once both players have
- * picked. The client lock is held. */
-static u32 build_game(int remotes, u8 *alt_out)
+/* Everyone's selections by port, ours included. The client lock is held. */
+static void selections_by_port(const SoSelections **by_port, int remotes)
 {
-	const SoSelections *by_port[SO_REMOTE_MAX + 1] = { NULL };
 	const SoSelections *lps = so_np_local_selections();
-	u16 stage = 0x1F;
-	u8 alt = 0, *b = x.match_block;
-	u32 rng;
-	int i, j, teams = x.mode == SO_MODE_TEAMS;
-
+	int i;
+	for (i = 0; i <= SO_REMOTE_MAX; i++)
+		by_port[i] = NULL;
 	if (lps->player_idx <= SO_REMOTE_MAX)
 		by_port[lps->player_idx] = lps;
 	for (i = 0; i < remotes; i++) {
@@ -1048,12 +1070,60 @@ static u32 build_game(int remotes, u8 *alt_out)
 		if (s->player_idx <= SO_REMOTE_MAX)
 			by_port[s->player_idx] = s;
 	}
-	for (i = 0; i <= remotes; i++) {
-		if (by_port[i] && by_port[i]->is_stage_selected) {
-			stage = by_port[i]->stage_id;
-			alt = by_port[i]->alt_stage_mode;
-			break;
-		}
+}
+
+/* The stage: the first port's that picked one, else Battlefield. */
+static const SoSelections *stage_picker(const SoSelections **by_port, int remotes)
+{
+	int i;
+	for (i = 0; i <= remotes; i++)
+		if (by_port[i] && by_port[i]->is_stage_selected)
+			return by_port[i];
+	return NULL;
+}
+
+/* Once everyone has picked: 0 when the picks keep to the mode's rules, 1
+ * when ours does not, 2 when someone else's or the stage does not. The
+ * client lock is held. */
+static int check_rules(int remotes)
+{
+	const SoSelections *by_port[SO_REMOTE_MAX + 1];
+	const SoSelections *lps = so_np_local_selections(), *picker;
+	int i, others_ok = 1;
+	if (!fixed_rules(x.mode) && x.mode != SO_MODE_TEAMS)
+		return 0;
+	for (i = 0; i < remotes; i++)
+		if (so_np_remote_selections(i)->character_id >= REGULAR_CHARACTERS)
+			others_ok = 0;
+	if (lps->character_id >= REGULAR_CHARACTERS)
+		return 1;
+	if (!others_ok)
+		return 2;
+	if (fixed_rules(x.mode)) {
+		selections_by_port(by_port, remotes);
+		picker = stage_picker(by_port, remotes);
+		if (!stage_allowed(picker ? picker->stage_id : 0x1F))
+			return 2;
+	}
+	return 0;
+}
+
+/* Writes the per-game fields into the match block once both players have
+ * picked. The client lock is held. */
+static u32 build_game(int remotes, u8 *alt_out)
+{
+	const SoSelections *by_port[SO_REMOTE_MAX + 1];
+	const SoSelections *lps = so_np_local_selections(), *picker;
+	u16 stage = 0x1F;
+	u8 alt = 0, *b = x.match_block;
+	u32 rng;
+	int i, j, teams = x.mode == SO_MODE_TEAMS;
+
+	selections_by_port(by_port, remotes);
+	picker = stage_picker(by_port, remotes);
+	if (picker) {
+		stage = picker->stage_id;
+		alt = picker->alt_stage_mode;
 	}
 	rng = so_np_is_decider() ? lps->rng_offset : so_np_remote_selections(0)->rng_offset;
 
@@ -1129,7 +1199,7 @@ static void on_get_match_state(void)
 		r = answer(MSRB_SIZE);
 		if (!r)
 			return;
-		state = mm_state();
+		state = x.forced_error[0] ? MM_ERROR : mm_state();
 		local_ready = x.local_sel.is_character_selected;
 		remote_ready = 0;
 		if (state != MM_CONNECTION_SUCCESS) {
@@ -1193,6 +1263,15 @@ static void on_get_match_state(void)
 		if (remotes == 1)
 			chat_player = sent ? x.local_idx : x.remote_idx;
 		if (local_ready && remote_ready) {
+			int broken = check_rules(remotes);
+			if (broken) {
+				so_client_unlock();
+				so_log("exi: %s broke the mode's rules: ending the lobby", broken == 1 ? "our pick" : "a pick");
+				cleanup();
+				if (broken == 1)
+					strlcpy(x.forced_error, NOT_ALLOWED_CHARACTER, sizeof(x.forced_error));
+				continue;	/* and answer for the new state */
+			}
 			rng = build_game(remotes, &alt);
 			built = 1;
 		}
@@ -1267,7 +1346,9 @@ static void on_get_match_state(void)
 		strlcpy((char *)r + 0x38E, m->match_id, 51);
 	}
 	error[0] = '\0';
-	if (client_up())
+	if (x.forced_error[0])
+		strlcpy(error, x.forced_error, sizeof(error));
+	else if (client_up())
 		so_client_error(error, sizeof(error));
 	so_game_string(error, 120, r + 0x165);
 	memcpy(r + 0x256, x.match_block, MATCH_BLOCK_SIZE);
@@ -1303,6 +1384,17 @@ static void on_find_opponent(const u8 *p)
 	x.last_frame = 0;
 	if (!client_up())
 		return;
+	/* An early error, before queueing makes someone else requeue. */
+	x.forced_error[0] = '\0';
+	if ((fixed_rules(search.mode) || search.mode == SO_MODE_TEAMS) &&
+		x.local_sel.character_id >= REGULAR_CHARACTERS)
+		strlcpy(x.forced_error, NOT_ALLOWED_CHARACTER, sizeof(x.forced_error));
+	else if (fixed_rules(search.mode) && x.local_sel.is_stage_selected && !stage_allowed(x.local_sel.stage_id))
+		strlcpy(x.forced_error, NOT_ALLOWED_STAGE, sizeof(x.forced_error));
+	if (x.forced_error[0]) {
+		so_log("exi: not queueing (mode %u): %s", (unsigned)search.mode, x.forced_error);
+		return;
+	}
 	so_log("exi: find opponent (mode %u)", (unsigned)search.mode);
 	so_client_find_match(&search);
 }

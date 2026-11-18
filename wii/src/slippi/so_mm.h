@@ -23,6 +23,7 @@ enum {
 	SO_MODE_UNRANKED = 1,
 	SO_MODE_DIRECT = 2,
 	SO_MODE_TEAMS = 3,
+	SO_MODE_PARTY = 4,
 };
 
 #define SO_MAX_PLAYERS 4

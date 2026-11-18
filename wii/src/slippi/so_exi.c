@@ -1017,11 +1017,18 @@ static u8 mm_state(void)
 	}
 }
 
-static u16 shade_key(const u8 *b, int slot)
+/* Same character (Sheik counting as Zelda) and colour, or in Teams, team. */
+static u16 shade_key(const u8 *b, int slot, int teams)
 {
 	u8 c = b[0x60 + slot * 0x24];
-	return (u16)(((c == 0x13 ? 0x12 : c) << 8) | b[0x63 + slot * 0x24]);
+	return (u16)(((c == 0x13 ? 0x12 : c) << 8) | b[(teams ? 0x69 : 0x63) + slot * 0x24]);
 }
+
+/* Teams when everyone picked the same one: one of these by the decider's rng
+ * offset, as Dolphin (a fixed list, so every console gets the same). */
+static const u8 team_splits[6][4] = {
+	{ 0, 0, 1, 1 }, { 1, 1, 0, 0 }, { 0, 1, 1, 0 }, { 1, 0, 0, 1 }, { 0, 1, 0, 1 }, { 1, 0, 1, 0 },
+};
 
 /* Writes the per-game fields into the match block once both players have
  * picked. The client lock is held. */
@@ -1032,7 +1039,7 @@ static u32 build_game(int remotes, u8 *alt_out)
 	u16 stage = 0x1F;
 	u8 alt = 0, *b = x.match_block;
 	u32 rng;
-	int i, j;
+	int i, j, teams = x.mode == SO_MODE_TEAMS;
 
 	if (lps->player_idx <= SO_REMOTE_MAX)
 		by_port[lps->player_idx] = lps;
@@ -1050,27 +1057,41 @@ static u32 build_game(int remotes, u8 *alt_out)
 	}
 	rng = so_np_is_decider() ? lps->rng_offset : so_np_remote_selections(0)->rng_offset;
 
-	for (i = 0; i <= remotes; i++) {
-		const SoSelections *s = by_port[i];
-		if (!s || !s->is_character_selected)
-			continue;
-		b[0x60 + i * 0x24] = s->character_id;
-		b[0x63 + i * 0x24] = s->character_color;
-		b[0x67 + i * 0x24] = 0;
-		b[0x69 + i * 0x24] = 0;	/* team: Teams only */
+	/* Teams: each player's own pick, unless everyone picked the same team
+	 * (nobody changed it): then a split from team_splits. The game recolours
+	 * the costumes by team. Other modes: no teams. */
+	{
+		int same = 1, first = -1;
+		for (i = 0; i <= remotes; i++) {
+			if (!by_port[i])
+				continue;
+			if (first < 0)
+				first = by_port[i]->team_id;
+			else if (by_port[i]->team_id != first)
+				same = 0;
+		}
+		for (i = 0; i <= remotes; i++) {
+			const SoSelections *s = by_port[i];
+			if (!s || !s->is_character_selected)
+				continue;
+			b[0x60 + i * 0x24] = s->character_id;
+			b[0x63 + i * 0x24] = s->character_color;
+			b[0x67 + i * 0x24] = 0;
+			b[0x69 + i * 0x24] = !teams ? 0 : same ? team_splits[rng % 6][i] : s->team_id;
+		}
 	}
 	/* Shades: each human slot gets the number of earlier slots with the same
-	 * character (Sheik counting as Zelda) and colour. */
+	 * shade_key. */
 	for (i = 0; i < 4; i++) {
 		u8 shade = 0;
 		if (b[0x61 + i * 0x24] != 0)
 			continue;
 		for (j = 0; j < i; j++)
-			if (b[0x61 + j * 0x24] == 0 && shade_key(b, j) == shade_key(b, i))
+			if (b[0x61 + j * 0x24] == 0 && shade_key(b, j, teams) == shade_key(b, i, teams))
 				shade++;
 		b[0x67 + i * 0x24] = shade;
 	}
-	b[0x08] = 0;	/* not Teams */
+	b[0x08] = teams;
 	b[0x61 + 2 * 0x24] = remotes >= 2 ? 0 : 3;
 	b[0x61 + 3 * 0x24] = remotes >= 3 ? 0 : 3;
 	so_put_u16(b + 0x0E, stage);
@@ -1225,12 +1246,15 @@ static void on_get_match_state(void)
 			strlcpy((char *)r + 0x0F1 + i * 29, m->players[i].uid, 29);
 		}
 		/* The opponents, as the game names them: the other human players'
-		 * names, each cut to share 15 characters, joined with '/'. */
+		 * names (in Teams, the other team's), each cut to share 15
+		 * characters, joined with '/'. */
 		{
 			const char *names[4];
 			int n = 0, each;
 			for (i = 0; i < 4 && i < m->player_count; i++)
-				if (i != x.local_idx && x.match_block[0x61 + i * 0x24] == 0 && m->players[i].display_name[0])
+				if (i != x.local_idx && x.match_block[0x61 + i * 0x24] == 0 && m->players[i].display_name[0] &&
+					!(x.mode == SO_MODE_TEAMS &&
+						x.match_block[0x69 + i * 0x24] == x.match_block[0x69 + x.local_idx * 0x24]))
 					names[n++] = m->players[i].display_name;
 			each = n ? (15 - (n - 1)) / n : 0;
 			for (i = 0; i < n; i++) {

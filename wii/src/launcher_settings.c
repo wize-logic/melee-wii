@@ -17,7 +17,7 @@ static const struct {
     K(mode),     K(skip),     K(controller_fix), K(pal),    K(mods),
     K(stages),   K(gameplay), K(screen),         K(safety), K(cheats),
     K(replays),  K(console),  K(xx_menu),       K(diagnostics),
-    K(offline_record),
+    K(offline_record), K(lag_reduction),
 #undef K
 };
 
@@ -64,6 +64,7 @@ int launcher_settings_load(LauncherSettings* s, const char* path)
     fclose(f);
     s->mode = clamp(s->mode, LAUNCH_MELEE, LAUNCH_MOD);
     s->controller_fix = clamp(s->controller_fix, 0, 2);
+    s->lag_reduction = clamp(s->lag_reduction, 0, 2);
     s->pal = s->pal != 0;
     s->mods = clamp(s->mods, 0, 3);
     s->stages = clamp(s->stages, 0, 2);

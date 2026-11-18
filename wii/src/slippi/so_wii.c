@@ -22,6 +22,7 @@
 #include "so_config.h"
 #include "so_files.h"
 #include "so_platform.h"
+#include "so_util.h"
 #include "so_wii.h"
 #include "string.h"
 
@@ -34,6 +35,8 @@ BLOB(crash_output)
 BLOB(screen_wide)
 BLOB(screen_wide_shutters)
 BLOB(ucf_084)
+BLOB(lag_pd)
+BLOB(lag_pdhalfvb)
 BLOB(ucf_084_stealth)
 BLOB(pal)
 BLOB(mods_stealth)
@@ -117,6 +120,42 @@ static void list_end(void)
 }
 
 #define APPLY(name) apply_listed(melee_gecko_##name, melee_gecko_##name##_size)
+
+/* wii/src/vi.c: the retrace does PD + half VB's step */
+extern int melee_wii_lag_half_vb;
+
+/* Slippi's "PD + half VB" (as Slippi Nintendont's Lag Reduction setting):
+ * the game polls the controllers twice a frame (pad.c keeps the rate it
+ * asks for), reads them at the first poll and starts its frame at the
+ * second, half a frame later, so a frame is shown sooner after its inputs.
+ * Two of its codes are not applied here:
+ * - its step in the GameCube's retrace handler, which the port replaces
+ *   (gecko.c leaves it out): vi.c does that step, as it does 20XX's, which
+ *   is the same code;
+ * - its hook at the boot's progressive scan question (gm_801A4510), which
+ *   puts the game in 480p whatever the cable: the port answers that
+ *   question from Wii Settings (vi.c, melee_wii_boot_dtv_status), and 480p
+ *   over a composite cable shows nothing. */
+static int apply_lag_half_vb(void)
+{
+    static const u32 progressive_question[] = { 0x801A4570 };
+    static u8 gct[8 + 512 + 8] __attribute__((aligned(32)));
+    u32 len = melee_gecko_lag_pdhalfvb_size;
+    int res;
+    if (len + 16 > sizeof(gct)) {
+        return -1;
+    }
+    memset(gct, 0, 8);
+    memcpy(gct + 8, melee_gecko_lag_pdhalfvb, len);
+    so_put_u32(gct + 8 + len, 0xF0000000);
+    so_put_u32(gct + 12 + len, 0);
+    len = so_gct_drop(gct, len + 16, progressive_question, 1);
+    res = apply_listed(gct + 8, len - 16);
+    if (res >= 0) {
+        melee_wii_lag_half_vb = 1;
+    }
+    return res;
+}
 
 /* The boot codes for online play, with the delay setting on the
  * character select screen turned into a label: the input delay goes with
@@ -224,6 +263,11 @@ int so_wii_start(const SoWiiSettings* settings)
         if (APPLY(core) < 0 || APPLY(crash_output) < 0) {
             return -11;
         }
+    }
+    if (settings->lag == SO_WII_LAG_PD) {
+        APPLY(lag_pd);
+    } else if (settings->lag == SO_WII_LAG_PD_HALF_VB) {
+        apply_lag_half_vb();
     }
     if (settings->controller_fix == SO_WII_UCF) {
         APPLY(ucf_084);

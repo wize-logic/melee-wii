@@ -439,6 +439,7 @@ static const char* const DELAY_KEYS[] = { "auto", "1", "2", "3", "4", "5", "6", 
 static const char* const DELAY[] = { "Auto",     "1 frame",  "2 frames", "3 frames", "4 frames",
                                      "5 frames", "6 frames", "7 frames", "8 frames", "9 frames" };
 static const char* const FIX[] = { "Off", "UCF 0.84", "UCF 0.84 (stealth)" };
+static const char* const LAG[] = { "Off", "PD", "PD + half VB" };
 static const char* const MODS[] = { "Off", "Stealth", "Tournament", "Friendlies" };
 static const char* const STAGES[] = { "Off", "Pok\xC3\xA9mon Stadium", "All" };
 static const char* const GAMEPLAY[] = { "Off", "Ledge grab limit", "Wobbling limit", "Both" };
@@ -458,6 +459,8 @@ static void settings(LauncherSettings* s)
          * game too: slippi/so_exi.c has it, off and untested; a line in config.ini turns it on) */
         { "Melee (offline)", "Controller fix", FIX, 3, &s->controller_fix,
           "UCF 0.84 for offline play. Online always has it." },
+        { NULL, "Lag reduction", LAG, 3, &s->lag_reduction,
+          "Steady input timing; half VB shows frames sooner." },
         { NULL, "PAL balance", ON_OFF, 2, &s->pal, "The PAL version's character balance." },
         { NULL, "Convenience", MODS, 4, &s->mods,
           "Slippi's Stealth, Tournament or Friendlies codes." },

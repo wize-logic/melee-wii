@@ -204,6 +204,7 @@ void melee_wii_launch(void)
     so.online = s.mode == LAUNCH_ONLINE;
     snprintf(so.root, sizeof(so.root), "%s", LAUNCHER_SLIPPI);
     so.controller_fix = s.controller_fix;
+    so.lag = s.lag_reduction;
     so.pal = s.pal;
     so.mods = s.mods;
     so.stages = s.stages;

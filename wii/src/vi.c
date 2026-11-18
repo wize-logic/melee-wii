@@ -55,9 +55,13 @@ static BOOL x20xx_lag_step(void)
     return TRUE;
 }
 
+/* Slippi's "PD + half VB", applied offline by the launcher's Lag reduction
+ * setting (slippi/so_wii.c): the same step as 20XX's, always on */
+int melee_wii_lag_half_vb;
+
 static void retrace_end(void)
 {
-    if (x20xx_lag_step() && *(volatile u32*) X20XX_LAG_ON != 0) {
+    if (melee_wii_lag_half_vb || (x20xx_lag_step() && *(volatile u32*) X20XX_LAG_ON != 0)) {
         if (*(volatile s32*) X20XX_POLLS < 1) {
             *(volatile u32*) X20XX_POLLED = 0;
             *(volatile u16*) X20XX_TIMING = 0x95FC;

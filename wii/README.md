@@ -31,7 +31,7 @@ are in this repository or in a release.
 | Slippi Online | Direct and Unranked, with rollback, over a wired connection or Wi-Fi; quick chat, connect code history, rumble |
 | Replays | Every online game as a `.slp` file; Melee's own games too, with **Record Melee's games** |
 | Console mirroring | Slippi Launcher can connect to the Wii to watch, record or relay games |
-| Slippi's offline codes | For Melee, each off until you turn it on: UCF 0.84, PAL balance, Stealth/Tournament/Friendlies, frozen stages, ledge grab and wobbling limits, safety. Widescreen follows Wii Settings |
+| Slippi's offline codes | For Melee, each off until you turn it on: UCF 0.84, lag reduction, PAL balance, Stealth/Tournament/Friendlies, frozen stages, ledge grab and wobbling limits, safety. Widescreen follows Wii Settings |
 | 20XX | 20XX Hack Pack (or another 1.02 mod) from its own disc image; part of its menu in Slippi Online |
 | Cheats | Your own Gecko codes, offline |
 | Controllers | GameCube controllers; Classic Controllers on Wiis without GameCube ports |
@@ -97,6 +97,7 @@ Kept in `sd:/apps/melee/settings.ini`.
 | Rumble | On, Off | Online. Also the rumble button on the online character select screen |
 | Delay frames | Auto, 1–9 | Online: see [the input delay](#the-input-delay) |
 | Controller fix | Off, UCF 0.84, UCF 0.84 (stealth) | Offline |
+| Lag reduction | Off, PD, PD + half VB | Offline: Slippi's lag reduction codes, as in Slippi Nintendont. PD reads the controllers once a frame at the same point; PD + half VB also starts each frame half a frame later, so it is shown sooner after its inputs. Slippi Online has its own (Polling Drift Fix + VB) |
 | PAL balance | Off, On | Offline |
 | Convenience | Off, Stealth, Tournament, Friendlies | Offline: Slippi's convenience codes |
 | Frozen stages | Off, Pokémon Stadium, All | Offline |

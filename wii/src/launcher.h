@@ -22,6 +22,7 @@ typedef struct LauncherSettings {
     int mode;           /* LAUNCH_* */
     int skip;           /* start the last mode at once (hold B for the menu: ui.c) */
     int controller_fix; /* SO_WII_FIX_* (so_wii.h): the rest, offline */
+    int lag_reduction;  /* SO_WII_LAG_* */
     int pal;
     int mods;
     int stages;

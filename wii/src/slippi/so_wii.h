@@ -9,11 +9,13 @@ enum { SO_WII_MODS_OFF, SO_WII_MODS_STEALTH, SO_WII_MODS_TOURNAMENT, SO_WII_MODS
 enum { SO_WII_STAGES_OFF, SO_WII_STAGES_STADIUM, SO_WII_STAGES_ALL };
 enum { SO_WII_GAMEPLAY_OFF, SO_WII_GAMEPLAY_LGL, SO_WII_GAMEPLAY_WOBBLING, SO_WII_GAMEPLAY_BOTH };
 enum { SO_WII_SCREEN_OFF, SO_WII_SCREEN_WIDE, SO_WII_SCREEN_WIDE_SHUTTERS };
+enum { SO_WII_LAG_OFF, SO_WII_LAG_PD, SO_WII_LAG_PD_HALF_VB };
 
 typedef struct SoWiiSettings {
     int online;         /* Slippi Online (else Melee, with the codes below) */
     char root[96];      /* Slippi's folder ("sd:/apps/melee/slippi") */
     int controller_fix; /* SO_WII_FIX_*, offline (online has UCF) */
+    int lag;            /* SO_WII_LAG_*, offline (online has its own) */
     int pal;            /* PAL balance, offline */
     int mods;           /* SO_WII_MODS_*, offline */
     int stages;         /* SO_WII_STAGES_*, offline */

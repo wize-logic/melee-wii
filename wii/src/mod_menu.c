@@ -706,10 +706,11 @@ int melee_wii_menu_stick(u8 pad)
 
 /* ---- "Extra" on Slippi's Online Play screen -------------------------------
  * Slippi's Online Play screen has eight options, of which it shows those its
- * "is this option unlocked?" code allows: logged in, Unranked, Direct, Teams
- * and Party (Ranked the port locks: wii/src/slippi/so_wii.c). The one after
- * them is Log-out, which Slippi locks always ("use the launcher instead").
- * With the menu on, that place, under Party, is "Extra", and opens it:
+ * "is this option unlocked?" code allows: logged in, Unranked and Direct
+ * (Ranked, Teams and Party the port locks: wii/src/slippi/so_wii.c). The
+ * one after them is Log-out, which Slippi locks always ("use the launcher
+ * instead"). With the menu on, that place, under Direct, is "Extra", and
+ * opens it:
  *
  * - its label is one of the textures of Slippi's main menu file, and its
  *   description a text of Slippi's menu texts; both files are kept in RAM

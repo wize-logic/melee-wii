@@ -609,12 +609,20 @@ void so_client_find_match(const SoSearch *search)
 	c.game_asked = 1;
 	if (c.state != SO_CLIENT_OFF && search->mode == SO_MODE_RANKED) {
 		/* The Wii client does not play Ranked (Slippi's protected mode; its set
-		 * rules and reporting are not implemented). The menu hides it
-		 * (tools/ppc/hide_ranked.s); this is the backstop. */
+		 * rules and reporting are not implemented). The menu hides it (the
+		 * boot codes, g_online_boot.bin); this is the backstop. */
 		so_log("client: Ranked is not available on the Wii");
 		c.cancel_requested = 1;
 		c.search_requested = 0;
 		set_error("Ranked is not available on the Wii");
+	} else if (c.state != SO_CLIENT_OFF && (search->mode == SO_MODE_TEAMS || search->mode == SO_MODE_PARTY)) {
+		/* Not supported yet: 3- and 4-player games are untested on the Wii.
+		 * The menu hides them as it does Ranked; this is the backstop. */
+		so_log("client: %s is not available on the Wii yet", search->mode == SO_MODE_TEAMS ? "Teams" : "Party");
+		c.cancel_requested = 1;
+		c.search_requested = 0;
+		set_error(search->mode == SO_MODE_TEAMS ? "Teams is not available on the Wii yet" :
+			"Party is not available on the Wii yet");
 #if 0	/* Wi-Fi plays again (2026-11-10): the profile follows Wii Settings' connection */
 	} else if (c.state != SO_CLIENT_OFF && c.link != SO_LINK_WIRED) {
 		/* Online play only over a wired connection: on Wi-Fi the Wii's link

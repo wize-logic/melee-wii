@@ -7,7 +7,8 @@
  * bootloader, which fetches the online codeset from the device and applies
  * it, the delay and rumble buttons on the online character select screen
  * (the delay's shown as the connection instead: online_boot), and no
- * Ranked. The online codeset brings its own gameplay codes (UCF...).
+ * Ranked, Teams or Party (the Online Play screen's options 0, 3 and 4
+ * locked: their hook at mn_80229938). The online codeset brings its own gameplay codes (UCF...).
  *
  * Offline: the codes the player chose among Slippi Nintendont's (controller
  * fix, PAL balance, convenience mods, frozen stages, gameplay rules,

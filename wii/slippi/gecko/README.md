@@ -6,7 +6,7 @@ as Slippi Nintendont ships them. `wii/src/slippi/gecko_blobs.S` links them into 
 
 | File | Applied |
 |---|---|
-| `g_online_boot.bin` | Slippi Online: the client's boot codes. Slippi's bootloader (which fetches the online codeset from the EXI device), the rumble button and the connection's label on the character select screen, no Ranked |
+| `g_online_boot.bin` | Slippi Online: the client's boot codes. Slippi's bootloader (which fetches the online codeset from the EXI device), the rumble button and the connection's label on the character select screen, no Ranked, Teams or Party (the Online Play screen's options 0, 3 and 4 locked, at `mn_80229938`) |
 | `g_core.bin`, `g_crash_output.bin` | Offline, with Replays or Console mirroring on |
 | `g_ucf_084*.bin`, `g_lag_pd*.bin`, `g_pal.bin`, `g_mods_*.bin`, `g_stages_*.bin`, `g_gameplay_*.bin`, `g_screen_wide*.bin`, `g_safety.bin` | Offline, by the launcher's settings |
 | `g_core_porta.bin`, `g_ucf.bin`, `g_ucf_stealth.bin` | Not applied |

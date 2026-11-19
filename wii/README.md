@@ -30,7 +30,7 @@ are in this repository or in a release.
 | | |
 |---|---|
 | The game | All modes, sound and music, movies, saves (on the SD card), 480p with a component cable |
-| Slippi Online | Slippi 3.7.0's Direct, Unranked, Teams and Party, with rollback, over a wired connection or Wi-Fi; quick chat, connect code history, rumble |
+| Slippi Online | Slippi 3.7.0's Direct and Unranked, with rollback, over a wired connection or Wi-Fi; quick chat, connect code history, rumble |
 | Replays | Every online game as a `.slp` file; Melee's own games too, with **Record Melee's games** |
 | Console mirroring | Slippi Launcher can connect to the Wii to watch, record or relay games |
 | Slippi's offline codes | For Melee, each off until you turn it on: UCF 0.84, lag reduction, PAL balance, Stealth/Tournament/Friendlies, frozen stages, ledge grab and wobbling limits, safety. Widescreen follows Wii Settings |
@@ -38,8 +38,8 @@ are in this repository or in a release.
 | Cheats | Your own Gecko codes, offline |
 | Controllers | GameCube controllers; Classic Controllers on Wiis without GameCube ports |
 
-Not there: Ranked (left out), a delay-based netcode (rollback only), and any disc other than NTSC
-1.02.
+Not there: Ranked (left out), Teams and Party (not supported yet: hidden on the Online Play
+screen), a delay-based netcode (rollback only), and any disc other than NTSC 1.02.
 
 ## What you need
 
@@ -141,8 +141,8 @@ version.
 
 ## Slippi Online
 
-Direct, Unranked, Teams and Party against players on Slippi Dolphin 3.7.0, with Slippi's own
-rollback code and the port's savestates. How it works, and what was measured:
+Direct and Unranked against players on Slippi Dolphin 3.7.0, with Slippi's own rollback code and
+the port's savestates. Teams and Party are not supported yet. How it works, and what was measured:
 [docs/netplay.md](docs/netplay.md).
 
 - **Wired plays best:** a USB LAN adapter with the ASIX AX88772 chip (Nintendo's Wii LAN Adapter,
@@ -188,7 +188,7 @@ Remote) and set **20XX menu** to On. It is off by default, and listed only while
 found. It is Slippi Online's alone: Melee is never given it.
 
 It gives the part of 20XX's debug menu that changes only sound or picture, with your image's songs
-and files. **Extra** on the Online Play screen, under Party, opens it (and Y, there or on the main
+and files. **Extra** on the Online Play screen, under Direct, opens it (and Y, there or on the main
 menu's first screen).
 
 The stick or D-pad moves, A opens or plays, B goes back, Start leaves.

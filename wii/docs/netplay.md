@@ -23,8 +23,9 @@ check offers.
 | Diagnostics | `so_gamelog.c` |
 | The start, before the game's `main` | `so_wii.c`, `so_client.c` |
 
-Modes: Direct, Unranked, Teams and Party. Ranked is left out (hidden by the boot codes, and
-refused by the client).
+Modes: Direct and Unranked. Ranked is left out, and Teams and Party are not supported yet: all
+three are hidden by the boot codes (the Online Play screen's options 0, 3 and 4 locked) and refused
+by the client. The code for 3- and 4-player games (team assignment, drop reports) is in, untested.
 
 What 3.7.0 changed, as the port does it:
 

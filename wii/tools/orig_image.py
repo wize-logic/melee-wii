@@ -482,7 +482,24 @@ def main() -> None:
     common = common.replace(old, old + "\n\t__port_vma_start = ADDR(.init);"
                             "\n\t__port_load_start = LOADADDR(.init);"
                             "\n\t__port_load_end = LOADADDR(.data) + SIZEOF(.data);", 1)
+    # melee_boot copies __port_load_start..__port_load_end to __port_vma_start in one
+    # block, so each of these sections has to be loaded as far from .init as it runs.
+    # The ". = ALIGN(32);" before .rodata moves only the run address: without
+    # ALIGN_WITH_INPUT, .rodata loaded up to 28 bytes short of where it runs whenever
+    # .text did not end on 32 bytes, and the program died before its first frame
+    # (binutils 2.46.0.20260210 puts the empty .glink before that ALIGN; the linker of
+    # builds that worked put it after, and the gap was loaded too).
+    common, n = re.subn(r"\n\t\.rodata : \{", "\n\t.rodata : ALIGN_WITH_INPUT {", common)
+    if n != 1:
+        raise SystemExit("orig_image: libogc_common.ld's .rodata not found")
+    copied = re.findall(r"\n\t(\.[\w.]+) :[^{\n]*\{[^}]*\} > mem2 AT> load", common)
+    if copied[:1] != [".init"] or ".data" not in copied:
+        raise SystemExit(f"orig_image: unexpected MEM2 sections in libogc_common.ld: {copied}")
     w.append(common)
+    w.append("/* melee_boot's one block: each section where it runs, from its load address */")
+    for name in copied[1:]:
+        w.append(f'ASSERT(LOADADDR({name}) - LOADADDR(.init) == ADDR({name}) - ADDR(.init), '
+                 f'"orig_image: {name} is not loaded as far from .init as it runs (melee_boot copies one block)");')
     (args.out / "melee.ld").write_text("\n".join(w) + "\n")
     print(f"orig_image: {len(sections)} sections, {len(tramps)} SDK functions to the port, "
           f"{len(missing)} without one, {len(provides)} symbols provided")

@@ -21,7 +21,8 @@
 #include "enet/enet.h"
 
 static void load_rumble(void);
-static void save_rumble(void);
+static void load_delay(void);
+static void save_delay(void);
 
 extern char __slippi_online_stack_addr, __slippi_online_stack_size;
 
@@ -437,7 +438,7 @@ static u32 NetworkThread(void *unused)
 
 		forward_logs();
 		so_exi_save_history();	/* after a search added a code (an SD write; not in a game) */
-		save_rumble();
+		save_delay();
 	}
 	return 0;
 }
@@ -481,6 +482,7 @@ int so_client_init(void)
 	c.init_ms = so_time_ms();
 	SO_PHASE("init config");
 	res = so_config_load(&c.config, &c.user);
+	load_delay();
 	apply_link();
 	load_rumble();
 	so_step_pause_us = (u32)c.config.diag_step_pause_ms * 1000;
@@ -488,7 +490,7 @@ int so_client_init(void)
 	if (so_config_is_real_mm(&c.config))
 		so_log("client: matchmaking %s%s, app version %s, delay %s%u", c.config.mm_host,
 			c.config.mm_path, c.config.app_version,
-			c.config.delay_override ? "" : "by the opponent's ping, from ", (unsigned)c.config.delay);
+			c.config.delay_override ? "manual, " : "by the opponent's ping, from ", (unsigned)c.config.delay);
 	else
 		so_log("client: TEST matchmaking server %s:%u", c.config.mm_host, (unsigned)c.config.mm_port);
 
@@ -525,7 +527,7 @@ const SoConfig *so_client_config(void)
 }
 
 /* The input delay for the next game, as the game is told it (the client
- * lock held): the launcher's override, else by the connection and the round
+ * lock held): the manual one, else by the connection and the round
  * trip to the opponent measured since connecting (so_config_auto_delay).
  * Without a reading yet, the middle one. */
 static u32 delay_ping_ms;
@@ -552,7 +554,7 @@ u8 so_client_match_delay(void)
 }
 
 /* How the delay was chosen (the Diagnostics record): 1 automatic, with the
- * ping and its readings; 0 the launcher's override */
+ * ping and its readings; 0 manual */
 int so_client_delay_info(u32 *ping_ms, int *samples)
 {
 	*ping_ms = delay_ping_ms;
@@ -561,19 +563,8 @@ int so_client_delay_info(u32 *ping_ms, int *samples)
 }
 
 #define SO_RUMBLE_PATH "/slippi/rumble.txt"
-static volatile int rumble_dirty;
 
-int so_client_set_rumble(int on)
-{
-	if ((on == 0 || on == 1) && on != c.config.rumble) {
-		c.config.rumble = (u8)on;
-		rumble_dirty = 1;
-		so_log("client: rumble %s (set on the Wii)", on ? "on" : "off");
-	}
-	return c.config.rumble;
-}
-
-/* rumble.txt, written from the online CSS's rumble switch, wins over config.ini. */
+/* rumble.txt, the launcher's Rumble setting, wins over config.ini. */
 static void load_rumble(void)
 {
 	char text[8];
@@ -582,17 +573,52 @@ static void load_rumble(void)
 		c.config.rumble = (u8)(text[0] - '0');
 }
 
-static void save_rumble(void)
+#define SO_DELAY_PATH "/slippi/delay.txt"
+static volatile int delay_dirty;
+
+u8 so_client_step_delay(int step)
+{
+	int d = c.config.delay_override;
+	if (d == 0)
+		return c.config.delay;
+	d += step < 0 ? -1 : step > 0 ? 1 : 0;
+	if (d < 1)
+		d = 1;
+	if (d > 9)
+		d = 9;
+	if (d != c.config.delay_override) {
+		c.config.delay_override = (u8)d;
+		c.config.delay = (u8)d;
+		delay_dirty = 1;
+		so_log("client: delay %d (set on the character select screen)", d);
+	}
+	return c.config.delay_override;
+}
+
+/* delay.txt, written from the character select screen, is the manual
+ * delay (only when the launcher's setting is Manual). */
+static void load_delay(void)
+{
+	char text[8];
+	int n;
+	if (c.config.delay_override == 0)
+		return;
+	n = so_read_file(SO_DELAY_PATH, text, sizeof(text) - 1);
+	if (n > 0 && text[0] >= '1' && text[0] <= '9')
+		c.config.delay_override = (u8)(text[0] - '0');
+}
+
+static void save_delay(void)
 {
 	char text[3];
-	if (!rumble_dirty)
+	if (!delay_dirty)
 		return;
-	rumble_dirty = 0;
-	text[0] = (char)('0' + c.config.rumble);
+	delay_dirty = 0;
+	text[0] = (char)('0' + c.config.delay_override);
 	text[1] = '\n';
 	text[2] = 0;
-	if (so_write_file(SO_RUMBLE_PATH, text, 2) < 0)
-		so_log("client: could not save the rumble setting");
+	if (so_write_file(SO_DELAY_PATH, text, 2) < 0)
+		so_log("client: could not save the input delay");
 }
 
 const SoUser *so_client_user(void)

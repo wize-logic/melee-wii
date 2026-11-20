@@ -17,6 +17,10 @@
 #define SO_TEST_USER_PATH "/slippi/test-user.json"	/* the dummy test account */
 #define SO_CONFIG_PATH "/slippi/config.ini"
 
+/* The manual input delay before one is picked on the character select
+ * screen (Slippi Dolphin's default) */
+#define SO_MANUAL_DELAY_DEFAULT 2
+
 /* The Slippi Dolphin (Ishiiruka) version whose online play this client
  * implements, as it tells the matchmaking service; the service only pairs
  * players of one version: a newer Slippi needs a new release (the
@@ -46,7 +50,11 @@ typedef struct {
 	 * what goes with the connection and the opponent's ping
 	 * (so_config_auto_delay; so_client_match_delay keeps it) */
 	u8 delay;
-	u8 delay_override;	/* input_delay=1-9 (the launcher's setting); 0, auto: none */
+	/* input_delay=manual (the launcher's setting): the delay picked on the
+	 * online character select screen (delay.txt; SO_MANUAL_DELAY_DEFAULT
+	 * until one is). 0, input_delay=auto: none. (An old input_delay=1-9 is
+	 * manual with that number.) */
+	u8 delay_override;
 	/* delay_adjust=1 (config.ini only, no launcher setting; off unless set): the automatic
 	 * delay also follows the ping during a game, a frame at a time
 	 * (so_exi.c: each change repeats or drops one input) */
@@ -109,8 +117,8 @@ typedef struct {
 	 * IOS have the CPU in between. */
 	u16 online_loop_us;
 	u8 chat;	/* quick chat in Direct (Slippi's default: on) */
-	u8 rumble;	/* controller rumble in online play (default on; rumble.txt, set on the
-		 * online CSS, wins over config.ini) */
+	u8 rumble;	/* controller rumble in online play (default on; rumble.txt, the
+		 * launcher's setting, wins over config.ini) */
 	u8 test_drop_pct;	/* tests: drop this share of outgoing pad packets */
 	u16 test_rx_delay_ms;	/* tests: hold each datagram received this long (latency) */
 	u16 test_rx_stall_ms;	/* tests: every 3 s, hold what comes this long, then all at once (a lag spike) */

@@ -484,10 +484,11 @@ static int row_shown(const Row* r, int have_20xx)
 }
 
 static const char* const ON_OFF[] = { "Off", "On" };
-/* config.ini's input_delay= (slippi/so_config.c), and how it shows */
-static const char* const DELAY_KEYS[] = { "auto", "1", "2", "3", "4", "5", "6", "7", "8", "9" };
-static const char* const DELAY[] = { "Auto",     "1 frame",  "2 frames", "3 frames", "4 frames",
-                                     "5 frames", "6 frames", "7 frames", "8 frames", "9 frames" };
+/* config.ini's input_delay= (slippi/so_config.c), and how it shows: Manual's
+ * number is picked on the online character select screen (an old 1-9 is
+ * Manual too) */
+static const char* const DELAY_KEYS[] = { "auto", "manual", "1", "2", "3", "4", "5", "6", "7", "8", "9" };
+static const char* const DELAY[] = { "Auto", "Manual" };
 static const char* const FIX[] = { "Off", "UCF 0.84", "UCF 0.84 (stealth)" };
 static const char* const LAG[] = { "Off", "PD", "PD + half VB" };
 static const char* const MODS[] = { "Off", "Stealth", "Tournament", "Friendlies" };
@@ -497,14 +498,14 @@ static const char* const SCREEN[] = { "4:3", "Widescreen 16:9", "16:9, 4:3 insid
 
 static void settings(LauncherSettings* s)
 {
-    int rumble = slippi_get_rumble(), delay = slippi_get_choice("input_delay", DELAY_KEYS, 10);
+    int rumble = slippi_get_rumble(), delay = slippi_get_choice("input_delay", DELAY_KEYS, 11) != 0;
     const int saved_delay = delay;
     int focus = 0, top = 0, focus_row = 0;
     Row rows[] = {
         { "Slippi Online", "Rumble", ON_OFF, 2, &rumble,
           "Controller rumble in online games." },
-        { NULL, "Delay frames", DELAY, 10, &delay,
-          "Online input delay. Auto picks it from the ping." },
+        { NULL, "Delay frames", DELAY, 2, &delay,
+          "Auto picks it from the ping. Manual: set on the character screen." },
         /* (no row for config.ini's delay_adjust=1, the delay following the ping during a
          * game too: slippi/so_exi.c has it, off and untested; a line in config.ini turns it on) */
         { "Melee (offline)", "Controller fix", FIX, 3, &s->controller_fix,

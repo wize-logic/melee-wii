@@ -59,8 +59,8 @@ enum {
 	CMD_HEARTBEAT = 0xDE,	/* diagnostics (tools/ppc/heartbeat.s) */
 	CMD_PROBE = 0xDD,	/* diagnostics (tools/ppc/probe_*.s) */
 	CMD_TEXT_REPORT = 0xDA,	/* Melee's panics and OSReport (tools/ppc/text_report.s) */
-	CMD_SET_DELAY = 0xDC,	/* Wii only: [step] -> [delay], the delay buttons (hidden: so_wii.c) */
-	CMD_SET_RUMBLE = 0xDB,	/* Wii only: [0 off, 1 on, 0xFF read] -> [rumble], the online CSS's rumble switch */
+	CMD_SET_DELAY = 0xDC,	/* Wii only: [step] -> [delay], the delay buttons (manual only: so_wii.c) */
+	CMD_SET_RUMBLE = 0xDB,	/* Wii only: [0 off, 1 on, 0xFF read] -> [rumble], the online CSS's rumble switch (hidden: so_wii.c) */
 };
 
 /* ONLINE_INPUTS results (the ASM's RESP_*). */
@@ -874,7 +874,7 @@ static void on_online_inputs(const u8 *p)
 					(unsigned)delay, (unsigned)ping_ms, samples,
 					delay != so_client_config()->delay ? "; NOT the one last given to the game" : "");
 			else
-				so_log("game: delay %u (the launcher's setting)", (unsigned)delay);
+				so_log("game: delay %u (manual)", (unsigned)delay);
 			so_gamelog_note("delay_choice=%s connect_ping_ms=%u readings=%d given=%u",
 				automatic ? "auto" : "override", (unsigned)ping_ms, samples,
 				(unsigned)so_client_config()->delay);
@@ -2055,11 +2055,11 @@ void so_exi_write(const u8 *request, u32 dma_len)
 	case CMD_GET_DELAY:
 		answer(2)[0] = 1;	/* a real answer: no extra delay offline */
 		break;
-	case CMD_SET_RUMBLE:	/* 0xFF: just the setting */
-		answer(1)[0] = (u8)so_client_set_rumble(request[1]);
+	case CMD_SET_RUMBLE:	/* the switch is hidden: the launcher's setting, unchanged */
+		answer(1)[0] = so_client_config()->rumble;
 		break;
-	case CMD_SET_DELAY:	/* the delay goes with the connection and the ping: no steps */
-		answer(1)[0] = so_client_config()->delay;
+	case CMD_SET_DELAY:	/* a signed step: 0 reads it */
+		answer(1)[0] = so_client_step_delay((s8)request[1]);
 		break;
 	case CMD_PREMADE_TEXT_LENGTH:
 	case CMD_PREMADE_TEXT_LOAD:

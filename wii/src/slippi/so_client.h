@@ -45,16 +45,16 @@ int so_client_online_game(void);
 
 const SoConfig *so_client_config(void);
 /* The online input delay for the next game (the client lock held): the
- * launcher's override (config.ini's input_delay), else by the connection and
+ * manual one (config.ini's input_delay=manual), else by the connection and
  * the round trip to the opponent since connecting. */
 u8 so_client_match_delay(void);
-/* How it was chosen: 1 automatic (and the ping, of how many readings), 0 the
- * override */
+/* How it was chosen: 1 automatic (and the ping, of how many readings), 0
+ * manual */
 int so_client_delay_info(u32 *ping_ms, int *samples);
-/* Turns controller rumble in online play on (1) or off (0), or just reads
- * it (any other value), saving a change on the SD card
- * (/slippi/rumble.txt, which overrides config.ini). Returns the setting. */
-int so_client_set_rumble(int on);
+/* The character select screen's - (step < 0) and + (step > 0): with the
+ * manual delay, moves it a frame (1-9), saving a change on the SD card
+ * (/slippi/delay.txt). Returns the delay; automatic, it changes nothing. */
+u8 so_client_step_delay(int step);
 const SoUser *so_client_user(void);
 
 /* Starts matchmaking; any previous search or match ends first. */

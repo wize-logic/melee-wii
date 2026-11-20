@@ -19,9 +19,9 @@ enum { LAUNCH_MELEE, LAUNCH_ONLINE, LAUNCH_MOD };
  * is given without a setting of the player's asking for it) */
 #define LAUNCH_SCREEN_AUTO 3
 
-/* sd:/apps/melee/settings.ini. The online rumble and connection are
+/* sd:/apps/melee/settings.ini. The online rumble and input delay are
  * Slippi's own files (rumble.txt, config.ini in its folder); the character
- * select screen writes rumble.txt too. */
+ * select screen writes delay.txt, the Manual delay's number. */
 typedef struct LauncherSettings {
     int mode;           /* LAUNCH_* */
     int skip;           /* start the last mode at once (hold B for the menu: ui.c) */

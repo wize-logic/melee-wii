@@ -96,8 +96,8 @@ Kept in `sd:/apps/melee/settings.ini`.
 
 | Setting | Choices (default first) | |
 |---|---|---|
-| Rumble | On, Off | Online. Also the rumble button on the online character select screen |
-| Delay frames | Auto, 1–9 | Online: see [the input delay](#the-input-delay) |
+| Rumble | On, Off | Online |
+| Delay frames | Auto, Manual | Online: see [the input delay](#the-input-delay) |
 | Controller fix | Off, UCF 0.84, UCF 0.84 (stealth) | Offline |
 | Lag reduction | Off, PD, PD + half VB | Offline: Slippi's lag reduction codes, as in Slippi Nintendont. PD reads the controllers once a frame at the same point; PD + half VB also starts each frame half a frame later, so it is shown sooner after its inputs. Slippi Online has its own (Polling Drift Fix + VB) |
 | PAL balance | Off, On | Offline |
@@ -168,7 +168,9 @@ from the connection and the ping, as the match starts:
 | up to 100 ms | 3 | 4 |
 | over | 4 | 5 |
 
-**Delay frames** in Settings fixes it at 1 to 9 instead. More settings, by hand, in
+**Delay frames** set to **Manual** in Settings puts a delay setting on the online character
+select screen instead, below the connection (LAN or WiFi): 1 to 9 frames with its - and +,
+starting at 2 and kept from then on. More settings, by hand, in
 `/apps/melee/slippi/config.ini`: [docs/netplay.md](docs/netplay.md#configini).
 
 ## 20XX
@@ -242,7 +244,7 @@ All under `sd:/apps/melee/`.
 | `slippi/user.json` | Your Slippi account. Keep it private |
 | `slippi/netplay.gct`, `slippi/files/`, `slippi/patches/` | Slippi's online code, menu files and patches, from the release zip. The launcher makes the patched menus from your disc |
 | `slippi/replays/` | Replays |
-| `slippi/config.ini`, `slippi/rumble.txt` | The online client's settings |
+| `slippi/config.ini`, `slippi/rumble.txt`, `slippi/delay.txt` | The online client's settings |
 | `20xx.ini`, `20xx-stages.txt` | The 20XX menu's values, and the file check's verdicts (delete it to check again) |
 | `logs/log.txt` | The log; the four runs before it as `log-1.txt` to `log-4.txt` |
 | `logs/diag/` | With Diagnostics on, a record of each online game |

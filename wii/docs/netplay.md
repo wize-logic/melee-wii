@@ -168,10 +168,13 @@ connection and the round trip to them (`so_config_auto_delay`):
   on the character select screen). With no reading yet, 75 ms is assumed.
 - The game takes the delay as the match starts. The log's `game: delay ...` line and the
   Diagnostics record say what was measured and chosen.
-- The launcher's **Delay frames** setting (`input_delay=` in `config.ini`) overrides it with a
-  fixed 1 to 9.
-- The character select screen shows the connection (LAN or WiFi) where the boot codes have a
-  delay setting; a game shows the ping in the corner where Slippi showed the delay.
+- The launcher's **Delay frames** set to **Manual** (`input_delay=manual` in `config.ini`) fixes
+  it instead, at what the character select screen's delay setting says: 1 to 9, 2 until it is
+  changed, kept in `delay.txt` (`so_client_step_delay`). With Auto the setting is not shown.
+- The character select screen shows the connection (LAN or WiFi) where the boot codes have the
+  delay setting, and the delay setting, with Manual, where they have a rumble switch (rumble is
+  the launcher's setting only: `so_wii.c`, `apply_online_boot`). A game shows the ping in the
+  corner where Slippi showed the delay.
 
 **`delay_adjust=1`** in `config.ini` (off without it; only with Auto) lets the delay follow the
 ping during a game, up or down a frame at a time: when the median ping of the last 3 s has been
@@ -268,9 +271,9 @@ writes `input_delay`; the rest is by hand. `so_config.h` describes every key.
 
 | Key | Values | Default |
 |---|---|---|
-| `input_delay` | `auto`, `1`–`9` | `auto` |
+| `input_delay` | `auto`, `manual` (an old `1`–`9` is `manual` with that number, until `delay.txt` names one) | `auto` |
 | `delay_adjust` | `0`, `1` | `0` |
-| `chat`, `rumble` | `0`, `1` | `1` (`rumble.txt`, which the character select screen's rumble button writes, wins) |
+| `chat`, `rumble` | `0`, `1` | `1` (`rumble.txt`, which the launcher's Rumble setting writes, wins) |
 | `wifi_rate` | `wii`, `54`, `1` | `wii` |
 | `wifi_retries` | `wii`, `1`–`15` | `wii` |
 | `net_io` | `auto`, `threads`, `poll` | `poll` on Wi-Fi, `threads` wired |

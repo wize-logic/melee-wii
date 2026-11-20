@@ -10,7 +10,8 @@
  *                          lists, one after the other: Slippi 3.7.0's files
  *                          that refer to the disc's art), size, CRC-32
  *   user.json              the account (Slippi Launcher's)
- *   rumble.txt, config.ini   the online client's settings
+ *   rumble.txt, config.ini   the online client's settings (and delay.txt, which
+ *                          the character select screen writes)
  *
  * Nothing from the disc is shipped: on the first start of Slippi Online the
  * launcher applies the patches to the disc's files, checks each result

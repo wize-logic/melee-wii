@@ -5,8 +5,9 @@
  * Slippi's files and online codeset), Slippi's EXI device answers on slot B
  * (wii/src/exi.c), and the codes installed at boot are the client's own: Slippi's
  * bootloader, which fetches the online codeset from the device and applies
- * it, the delay and rumble buttons on the online character select screen
- * (the delay's shown as the connection instead: online_boot), and no
+ * it, the delay setting on the online character select screen (with
+ * the launcher's Manual delay only) and the connection's label in place of
+ * the rumble switch (online_boot), and no
  * Ranked, Teams or Party (the Online Play screen's options 0, 3 and 4
  * locked: their hook at mn_80229938). The online codeset brings its own gameplay codes (UCF...).
  *
@@ -158,36 +159,71 @@ static int apply_lag_half_vb(void)
     return res;
 }
 
-/* The boot codes for online play, with the delay setting on the
- * character select screen turned into a label: the input delay goes with
- * the connection and the opponent's ping (so_client_match_delay; the
- * launcher's setting overrides it), so the label says which connection, and
- * its - and + and the number are blank (spaces: Melee's text wants
- * something to lay out). Its strings, one after the other in its code: the
- * label (16 bytes), "-" and "+" (Shift-JIS, 4 bytes each) and the number's
- * format (4). Pressing where the buttons were changes nothing: the device
- * answers their command with the same delay (so_exi.c, CMD_SET_DELAY). */
-static int apply_online_boot(int wifi)
+/* The boot codes for online play, with the character select screen's two
+ * rows changed. Slippi's code draws the delay setting (a label, - and +, the
+ * number) and, 45 units below it, the rumble switch (a label, On or Off),
+ * and takes presses where it drew them, all from one table in its code: the
+ * delay row's y (data + 16, data + 20: by the screen's mode), the rumble
+ * row's offset from it (data + 116), then their strings. The rows swap
+ * places, and:
+ * - the rumble row becomes a label saying which connection, with no On or
+ *   Off (rumble is the launcher's setting; the device answers the switch's
+ *   command with it unchanged: so_exi.c, CMD_SET_RUMBLE);
+ * - the delay row, where the rumble switch was, is the delay setting when
+ *   the launcher's is Manual (so_client_step_delay), and blank with Auto
+ *   (presses there change nothing).
+ * Blank strings are spaces: Melee's text wants something to lay out. */
+#define BOOT_DELAY_Y_WIDE (-72) /* the table, from the delay's label */
+#define BOOT_DELAY_Y (-68)
+#define BOOT_RUMBLE_OFFSET 28
+#define BOOT_RUMBLE_LABEL 40 /* 8 bytes */
+#define BOOT_RUMBLE_ON 48    /* 4 */
+#define BOOT_RUMBLE_OFF 52   /* 4 */
+
+static void boot_float(u8* p, float add, int set, float value)
 {
+    union {
+        float f;
+        u32 u;
+    } v;
+    v.u = so_get_u32(p);
+    v.f = set ? value : v.f + add;
+    so_put_u32(p, v.u);
+}
+
+static int apply_online_boot(int wifi, int manual)
+{
+    /* the delay row's strings, one after the other: the label (16 bytes),
+     * "-" and "+" (Shift-JIS, 4 bytes each) and the number's format (4) */
     static const u8 strings[28] = { 'D', 'e', 'l', 'a', 'y', ' ', 'F', 'r', 'a', 'm', 'e', 's', 0, 0,
                                     0, 0, 0x81, 0x7C, 0, 0, 0x81, 0x7B, 0, 0, '%', 'd', 0, 0 };
+    static const u8 rumble[16] = { 'R', 'u', 'm', 'b', 'l', 'e', 0, 0, 'O', 'n', 0, 0, 'O', 'f', 'f', 0 };
     static u8 codes[8 * 1024] __attribute__((aligned(32)));
     u32 len = melee_gecko_online_boot_size, i;
     if (len > sizeof(codes)) {
         return APPLY(online_boot);
     }
     memcpy(codes, melee_gecko_online_boot, len);
-    for (i = 0; i + sizeof(strings) <= len; i += 4) {
-        if (memcmp(codes + i, strings, sizeof(strings)) == 0) {
+    for (i = 76; i + BOOT_RUMBLE_OFF + 4 <= len; i += 4) {
+        if (memcmp(codes + i, strings, sizeof(strings)) == 0 &&
+            memcmp(codes + i + BOOT_RUMBLE_LABEL, rumble, sizeof(rumble)) == 0 &&
+            so_get_u32(codes + i + BOOT_RUMBLE_OFFSET) == 0x42340000) { /* 45.0 */
             u8* s = codes + i;
-            memset(s, 0, sizeof(strings));
-            memcpy(s, wifi ? "WiFi" : "LAN", wifi ? 4 : 3);
-            s[16] = s[20] = s[24] = ' ';
+            boot_float(s + BOOT_DELAY_Y_WIDE, 45.0f, 0, 0);
+            boot_float(s + BOOT_DELAY_Y, 45.0f, 0, 0);
+            boot_float(s + BOOT_RUMBLE_OFFSET, 0, 1, -45.0f);
+            if (!manual) {
+                memset(s, 0, sizeof(strings));
+                s[0] = s[16] = s[20] = s[24] = ' ';
+            }
+            memset(s + BOOT_RUMBLE_LABEL, 0, sizeof(rumble));
+            memcpy(s + BOOT_RUMBLE_LABEL, wifi ? "WiFi" : "LAN", wifi ? 4 : 3);
+            s[BOOT_RUMBLE_ON] = s[BOOT_RUMBLE_OFF] = ' ';
             break;
         }
     }
-    if (i + sizeof(strings) > len) {
-        so_log("wii: the delay setting's label not found: shown as it is");
+    if (i + BOOT_RUMBLE_OFF + 4 > len) {
+        so_log("wii: the character select screen's rows not found: shown as they are");
     }
     return melee_wii_gecko_apply(codes, len);
 }
@@ -239,7 +275,7 @@ int so_wii_start(const SoWiiSettings* settings)
                              melee_gecko_screen_wide_shutters_size);
         }
         melee_wii_exi_slippi(1);
-        if (apply_online_boot(so_client_config()->wifi) < 0) {
+        if (apply_online_boot(so_client_config()->wifi, so_client_config()->delay_override != 0) < 0) {
             return -10;
         }
         /* Tests: codes of one's own (an autoplay codeset, which plays

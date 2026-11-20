@@ -39,7 +39,7 @@ void so_config_apply_link(SoConfig *config, int detected)
 	int link = config->connection != SO_CONNECTION_AUTO ? config->connection : detected;
 	config->wifi = link == SO_CONNECTION_WIFI;
 	/* The input delay goes with the connection and the opponent's ping,
-	 * unless the launcher's setting names one (so_client_match_delay):
+	 * unless it is manual (so_client_match_delay):
 	 * until there is an opponent, the least it can be */
 	config->delay = config->delay_override ? config->delay_override : so_config_auto_delay(config->wifi, 0);
 	if (config->net_io == SO_NET_IO_AUTO)
@@ -109,6 +109,10 @@ static int apply(SoConfig *c, const char *key, const char *value)
 		return 0;
 	if (!strcmp(key, "input_delay") && !strcmp(value, "auto")) {
 		c->delay_override = 0;
+		return 0;
+	}
+	if (!strcmp(key, "input_delay") && !strcmp(value, "manual")) {
+		c->delay_override = SO_MANUAL_DELAY_DEFAULT;
 		return 0;
 	}
 	if (!strcmp(key, "connection"))

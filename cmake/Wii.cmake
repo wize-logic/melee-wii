@@ -2,6 +2,22 @@
 # over libogc and wiilib (libs/wiilib) (configure with the "wii" preset)
 include_guard(GLOBAL)
 
+# libogc 3.1.0 only, the version the port is built and tested with: the port replaces
+# parts of libogc's SDK and leans on its start-up, so a new version is a change to test
+# on a Wii first
+set(MELEE_LIBOGC_VERSION "3.1.0")
+set(_melee_ogc_h "${DEVKITPRO}/libogc/include/ogc/libversion.h")
+if(NOT EXISTS "${_melee_ogc_h}")
+    message(FATAL_ERROR "No libogc in ${DEVKITPRO} (${_melee_ogc_h}): see wii/README.md, Building")
+endif()
+file(STRINGS "${_melee_ogc_h}" _melee_ogc_v REGEX "#define _V_(MAJOR|MINOR|PATCH)_")
+string(REGEX REPLACE ".*_V_MAJOR_[ \t]+([0-9]+).*_V_MINOR_[ \t]+([0-9]+).*_V_PATCH_[ \t]+([0-9]+).*"
+       "\\1.\\2.\\3" _melee_ogc_v "${_melee_ogc_v}")
+if(NOT _melee_ogc_v STREQUAL MELEE_LIBOGC_VERSION)
+    message(FATAL_ERROR "libogc ${_melee_ogc_v} in ${DEVKITPRO}: Melee for the Wii is built with "
+                        "libogc ${MELEE_LIBOGC_VERSION} (see wii/README.md, Building)")
+endif()
+
 # No unwind tables: C here never unwinds, and they would take close to 1 MiB
 # of the MEM1 the game's heaps need
 add_compile_options(-fno-asynchronous-unwind-tables -fno-unwind-tables)

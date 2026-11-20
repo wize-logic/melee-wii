@@ -264,7 +264,9 @@ All under `sd:/apps/melee/`.
 
 You need:
 
-- devkitPro's `wii-dev` packages: devkitPPC (GCC 12 or newer), libogc 3.1 or newer, libfat;
+- devkitPro's `wii-dev` packages with **libogc 3.1.0** exactly (devkitPro's 2026-05-03 release,
+  the one the port is built and tested with): devkitPPC (GCC 12 or newer), libogc, libfat, and
+  `ppc-zlib`;
 - CMake 3.25 or newer, Ninja, Python 3.9 or newer;
 - the decompilation's own matching build, which needs your `main.dol`: see
   [the main README](../.github/README.md). `ninja` makes `build/GALE01/main.dol` and `main.elf`.
@@ -275,7 +277,8 @@ cmake --preset wii
 cmake --build --preset wii        # build/wii/melee.dol (and melee.elf, melee.map)
 ```
 
-The preset expects devkitPro in `/opt/devkitpro`. Elsewhere:
+The preset expects that devkitPro in `/opt/devkitpro-libogc-3.1.0`, and configuring stops when
+libogc is another version. Elsewhere:
 `cmake -S . -B build/wii -G Ninja -DCMAKE_TOOLCHAIN_FILE=$DEVKITPRO/cmake/Wii.cmake`.
 
 | Option | Default | |

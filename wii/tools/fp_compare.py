@@ -55,7 +55,8 @@ def ops(objdump, path):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--objdump", default="/opt/devkitpro/devkitPPC/bin/powerpc-eabi-objdump")
+    ap.add_argument("--objdump", default=os.path.join(os.environ.get("DEVKITPRO", "/opt/devkitpro-libogc-3.1.0"),
+                                                      "devkitPPC/bin/powerpc-eabi-objdump"))
     ap.add_argument("--all", action="store_true", help="every difference, not only fused ops")
     ap.add_argument("filter", nargs="*")
     args = ap.parse_args()

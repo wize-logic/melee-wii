@@ -8,8 +8,8 @@ Wi-Fi, replays, and the Diagnostics record. For players: [the README](../README.
 `wii/src/slippi` is a Slippi online client written for Slippi Nintendont's kernel, here on the
 PowerPC beside the game, over libogc (`so_platform_ogc.c`, `so_socket_ogc.c`). It follows Slippi
 Dolphin (Ishiiruka) 3.7.0, and reports itself as that version. The matchmaking service pairs only
-players of one version: a newer Slippi needs a new release of the port, which the launcher's update
-check offers.
+players of one version: a newer Slippi needs a new release of the port, which the launcher's Check
+for updates installs.
 
 | Part | Files |
 |---|---|

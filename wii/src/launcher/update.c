@@ -31,6 +31,7 @@
 #define API_URL "https://api.github.com/repos/" MELEE_WII_UPDATE_REPO "/releases/latest"
 #define USER_AGENT "melee-wii/" MELEE_WII_VERSION
 #define ZIP_MAX (64u << 20)
+#define UPDATE_THREAD_PRIORITY 32
 #ifndef SD_ROOT /* (the host tests write elsewhere) */
 #define SD_ROOT "sd:/"
 #endif
@@ -156,13 +157,23 @@ static u32 CheckThread(void* unused)
 
 void update_check_start(void)
 {
-    if (s_state != UPDATE_IDLE) {
+    /* one check at a time; a release already found is kept (an install that
+     * failed is tried again) */
+    if (s_state == UPDATE_CHECKING || s_state == UPDATE_AVAILABLE) {
         return;
     }
+    s32 thread;
+    s_error[0] = '\0';
     s_state = UPDATE_CHECKING;
-    if (so_thread_start(CheckThread, NULL, NULL, 64 * 1024, 0) < 0) {
+    thread = so_thread_start(CheckThread, NULL, NULL, 64 * 1024, 0);
+    if (thread < 0) {
         failed("Could not start the check");
+        return;
     }
+    /* below the launcher's own thread (libogc's main, 64): the TLS handshake
+     * is seconds of work, and above it the screen and the controllers would
+     * wait for it */
+    LWP_SetThreadPriority((lwp_t) thread, UPDATE_THREAD_PRIORITY);
 }
 
 int update_state(void)

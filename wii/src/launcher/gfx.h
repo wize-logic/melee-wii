@@ -22,5 +22,8 @@ int gfx_text_width(const Font* f, const char* s);
 int gfx_line_height(const Font* f);
 
 void gfx_present(void);
+/* The next frame with nothing new drawn: the screen keeps what it shows, and
+ * the CPU is left to other threads until then */
+void gfx_wait_frame(void);
 
 #endif

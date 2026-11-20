@@ -10,6 +10,7 @@
 #include <unistd.h>
 
 #include "../launcher.h"
+#include "../slippi/so_platform.h"
 #include "../slippi/so_wii.h"
 #include "files.h"
 #include "update.h"
@@ -237,7 +238,7 @@ static int pointed_row(int top, int pitch, int h, int count, int x_from, int x_t
 
 /* ---- the main screen ----------------------------------------------------- */
 
-enum { ITEM_MELEE, ITEM_ONLINE, ITEM_MOD, ITEM_SETTINGS, ITEM_INFO, ITEM_EXIT, ITEM_COUNT };
+enum { ITEM_MELEE, ITEM_ONLINE, ITEM_MOD, ITEM_SETTINGS, ITEM_INFO, ITEM_UPDATE, ITEM_EXIT, ITEM_COUNT };
 
 /* The modded images found (20XX), the one picked, and the main screen's
  * items (the mod's only when there is one) */
@@ -246,15 +247,23 @@ static ModDisc s_mods[MAX_MODS];
 static int s_mod_count, s_mod_pick;
 static int s_items[ITEM_COUNT], s_item_count;
 
+/* Seven items (with a mod image) fit above the status lines only as one-line
+ * rows, the subtitle after the title */
+static int items_compact(void)
+{
+    return s_item_count > 6;
+}
+
 static int item_pitch(void)
 {
-    return s_item_count > 5 ? 44 : 52;
+    return items_compact() ? 38 : s_item_count > 5 ? 44 : 52;
 }
 
 static void draw_main(int focus_index, const SlippiStatus* st)
 {
     static const char* const titles[ITEM_COUNT] = {
-        "Melee", "Slippi Online", "20XX", "Settings", "Game info", "Exit to the Homebrew Channel",
+        "Melee", "Slippi Online", "20XX", "Settings", "Game info", "Check for updates",
+        "Exit to the Homebrew Channel",
     };
     char sub[ITEM_COUNT][120];
     char line[128];
@@ -275,6 +284,7 @@ static void draw_main(int focus_index, const SlippiStatus* st)
     }
     snprintf(sub[ITEM_SETTINGS], sizeof(sub[0]), "Codes, replays and other options");
     snprintf(sub[ITEM_INFO], sizeof(sub[0]), "Check your disc and files");
+    snprintf(sub[ITEM_UPDATE], sizeof(sub[0]), "You have version " MELEE_WII_VERSION);
     snprintf(sub[ITEM_EXIT], sizeof(sub[0]), " ");
 
     background(NULL);
@@ -282,15 +292,23 @@ static void draw_main(int focus_index, const SlippiStatus* st)
         int i = s_items[n];
         int y = 118 + n * pitch;
         const char* title = i == ITEM_MOD && !s_mods[s_mod_pick].is_20xx ? "Modded Melee" : titles[i];
-        if (n == focus_index) {
-            gfx_round_rect(x + 40, y, 560, h, 12, GOLD, 255);
-            text_fit(&font_body_bold, x + 62, y + 3, DARK, title, 526, 0);
-            text_fit(&font_small, x + 62, y + h - 20, 0x3A3018, sub[i], 526, 0);
+        int focused = n == focus_index;
+        unsigned int title_color = focused            ? DARK
+                                   : i == ITEM_ONLINE ? GREEN
+                                   : i == ITEM_MOD    ? GOLD
+                                                      : WHITE;
+        unsigned int sub_color = focused ? 0x3A3018 : GREY;
+        gfx_round_rect(x + 40, y, 560, h, 12, focused ? GOLD : PANEL, focused ? 255 : 235);
+        if (items_compact()) {
+            int w;
+            text_fit(&font_body_bold, x + 62, y + 5, title_color, title, 526, 0);
+            w = gfx_text_width(&font_body_bold, title) + 16;
+            if (w < 526 - 40) {
+                text_fit(&font_small, x + 62 + w, y + 8, sub_color, sub[i], 526 - w, 0);
+            }
         } else {
-            gfx_round_rect(x + 40, y, 560, h, 12, PANEL, 235);
-            gfx_text(&font_body_bold, x + 62, y + 3, i == ITEM_ONLINE ? GREEN : i == ITEM_MOD ? GOLD : WHITE,
-                     title);
-            text_fit(&font_small, x + 62, y + h - 20, GREY, sub[i], 526, 0);
+            text_fit(&font_body_bold, x + 62, y + 3, title_color, title, 526, 0);
+            text_fit(&font_small, x + 62, y + h - 20, sub_color, sub[i], 526, 0);
         }
     }
     {
@@ -329,27 +347,6 @@ static void message(const char* title, const char* text, unsigned int color)
     }
 }
 
-/* A question: 1 for A, 0 for B */
-static int confirm(const char* title, const char* text, const char* hints)
-{
-    int x = left();
-    for (;;) {
-        unsigned int in = input_poll();
-        background(NULL);
-        gfx_round_rect(x + 60, 140, 520, 220, 16, PANEL, 245);
-        text_fit(&font_body_bold, x + 84, 160, GOLD, title, 472, 0);
-        text_wrapped(&font_small, x + 84, 200, 24, WHITE, text, 470, 6);
-        footer(hints);
-        present();
-        if (in & (IN_A | IN_START)) {
-            return 1;
-        }
-        if (in & IN_B) {
-            return 0;
-        }
-    }
-}
-
 typedef struct Progress {
     const char* title;
 } Progress;
@@ -377,32 +374,127 @@ static void prepare_progress(const char* name, int done, int total, void* ctx)
     draw_progress("Making Slippi's menus", what, done, total);
 }
 
+/* ---- the update check ---------------------------------------------------- */
+
+/* How long Check for updates waits for GitHub's answer (B gives up sooner) */
+#define UPDATE_WAIT_MS 30000
+
+/* The update screen: nothing else on it, its lines centred */
+static void update_centred(const Font* f, int y, unsigned int rgb, const char* text)
+{
+    char buf[160];
+    fit_string(f, text, 600, 0, buf, sizeof(buf));
+    gfx_text(f, (gfx_width() - gfx_text_width(f, buf)) / 2, y, rgb, buf);
+}
+
+static void update_screen(const char* title, unsigned int color, const char* line, const char* hint, int done,
+                          int total)
+{
+    gfx_gradient_v(0, 0, gfx_width(), gfx_height(), BG_TOP, BG_BOTTOM);
+    update_centred(&font_title, 170, color, title);
+    if (line != NULL) {
+        update_centred(&font_body, 222, WHITE, line);
+    }
+    if (total > 0) {
+        int x = (gfx_width() - 472) / 2;
+        gfx_round_rect(x, 262, 472, 20, 10, DARK, 255);
+        if (done > 0) {
+            gfx_round_rect(x, 262, 472 * done / total < 20 ? 20 : 472 * done / total, 20, 10, GREEN, 255);
+        }
+    }
+    if (hint != NULL) {
+        update_centred(&font_small, 320, GREY, hint);
+    }
+    gfx_present();
+}
+
 static void update_progress(const char* what, int done, int total)
 {
     char title[48];
     snprintf(title, sizeof(title), "Updating to %s", update_version());
-    draw_progress(title, what, done, total);
+    update_screen(title, WHITE, what, "Please wait", done, total > 0 ? total : 1);
 }
 
-/* A newer release: asked once a start; installed on A */
-static void offer_update(void)
+/* An outcome on the update screen, until A, B or START: drawn once, then the
+ * frames only waited for (a check still running keeps the CPU) */
+static void update_outcome(const char* title, unsigned int color, const char* line, const char* hint)
 {
-    char text[200], error[128];
-    snprintf(text, sizeof(text),
-             "Update now? The new version replaces the program and Slippi's files. "
-             "Your settings, saves and account stay.");
-    snprintf(error, sizeof(error), "Version %s is out", update_version());
-    if (!confirm(error, text, "A  update      B  later")) {
-        return;
+    update_screen(title, color, line, hint, 0, 0);
+    for (;;) {
+        unsigned int in = input_poll();
+        if (in & (IN_A | IN_B | IN_START)) {
+            return;
+        }
+        gfx_wait_frame();
     }
-    if (update_install(update_progress, error, sizeof(error)) < 0) {
-        message("The update failed", error, RED);
-        return;
+}
+
+/* The main menu's "Check for updates": "Checking for updates", its dots
+ * going . .. ..., alone on the screen, until the check is done, B, or 30 s
+ * (the check is then left to finish on its own, and the next press waits on
+ * it, or starts another after a failure). Each outcome stays on the screen
+ * until A (or B or START). A newer release is installed there and then; the
+ * program then has to be started again.
+ *
+ * The check's thread runs below this one (update.c), so it has the CPU only
+ * while this one waits for a frame: the screen is drawn again only when the
+ * dots change, every 400 ms. Drawn every frame (the canvas converted for the
+ * TV on the CPU), it left the check little of the CPU, the likely reason
+ * GitHub's answer did not come within the 10 s this waited then. */
+static void check_for_updates(void)
+{
+    u32 start = so_time_ms();
+    int drawn = -1;
+    update_check_start();
+    for (;;) {
+        u32 elapsed = so_time_ms() - start;
+        int state = update_state();
+        static const char* const dots[3] = { ".", "..", "..." };
+        const char* title = "Checking for updates";
+        int step = (int) (elapsed / 400) % 3, x;
+        unsigned int in = input_poll();
+        if (state == UPDATE_AVAILABLE) {
+            break;
+        }
+        if (state == UPDATE_NONE) {
+            update_outcome("Up to date", GREEN, "You have the newest version, " MELEE_WII_VERSION ".",
+                           "Press A to continue");
+            return;
+        }
+        if (state == UPDATE_FAILED || elapsed >= UPDATE_WAIT_MS) {
+            update_outcome("Could not check for updates", RED,
+                           state == UPDATE_FAILED ? update_error() : "GitHub did not answer in time.",
+                           "Press A to continue");
+            return;
+        }
+        if (in & IN_B) {
+            return; /* (the check goes on; choosing it again waits on it) */
+        }
+        if (step == drawn) {
+            gfx_wait_frame();
+            continue;
+        }
+        drawn = step;
+        /* placed as with "...", so the words stay put as the dots change */
+        x = (gfx_width() - gfx_text_width(&font_title, title) - gfx_text_width(&font_title, "...")) / 2;
+        gfx_gradient_v(0, 0, gfx_width(), gfx_height(), BG_TOP, BG_BOTTOM);
+        gfx_text(&font_title, x, 170, WHITE, title);
+        gfx_text(&font_title, x + gfx_text_width(&font_title, title), 170, WHITE, dots[step]);
+        update_centred(&font_small, 320, GREY, "Press B to cancel");
+        gfx_present();
     }
-    message("Updated", "Start Melee for the Wii again from the Homebrew Channel.", GREEN);
-    gfx_shutdown();
-    input_shutdown();
-    melee_wii_exit();
+    {
+        char error[128];
+        if (update_install(update_progress, error, sizeof(error)) < 0) {
+            update_outcome("The update failed", RED, error, "Press A to continue");
+            return;
+        }
+        update_outcome("Updated", GREEN, "Start Melee for the Wii again from the Homebrew Channel.",
+                       "Press A to exit");
+        gfx_shutdown();
+        input_shutdown();
+        melee_wii_exit();
+    }
 }
 
 /* (launcher_mod_start) 20XX's stage files, checked the first time */
@@ -530,8 +622,6 @@ static void settings(LauncherSettings* s)
           "Replays and mirroring for Melee too. Unlocks everything." },
         { "Launcher", "Skip this screen", ON_OFF, 2, &s->skip,
           "Start the last choice right away. Hold B at startup to come back." },
-        { NULL, "Check for updates", ON_OFF, 2, &s->update_check,
-          "Look for a newer version on GitHub at start." },
         { NULL, "Diagnostics", ON_OFF, 2, &s->diagnostics,
           "Log each online game's timing to /apps/melee/logs/diag." },
         /* only with a 20XX image */
@@ -847,18 +937,9 @@ int launcher_ui(LauncherSettings* s)
         return -1;
     }
     slippi_status(&st);
-    if (s->update_check) {
-        update_check_start();
-    }
-    int update_asked = 0;
     for (;;) {
         unsigned int in = input_poll();
         int pointed, item, focus = 0;
-        if (!update_asked && update_state() == UPDATE_AVAILABLE) {
-            update_asked = 1;
-            offer_update();
-            continue;
-        }
         /* rebuild the visible items from their prerequisites each frame, keeping
          * the cursor on the same item -- items appear and disappear live */
         s_item_count = 0;
@@ -931,6 +1012,10 @@ int launcher_ui(LauncherSettings* s)
                 slippi_status(&st);
                 continue;
             }
+            if (item == ITEM_UPDATE) {
+                check_for_updates();
+                continue;
+            }
             if (item == ITEM_EXIT) {
                 gfx_shutdown();
                 input_shutdown();
@@ -947,8 +1032,8 @@ int launcher_ui(LauncherSettings* s)
     }
     draw_progress(s->mode == LAUNCH_ONLINE ? "Starting Slippi Online"
                   : s->mode == LAUNCH_MOD ? "Starting 20XX" : "Starting Melee", " ", 0, 0);
-    /* the update check done first: it brings the network up, which the
-     * online client does too */
+    /* a Check for updates still running done first: it brings the network
+     * up, which the online client does too */
     update_wait(8000);
     launcher_mod_start(s, mod_progress);
     gfx_shutdown();

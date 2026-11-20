@@ -45,8 +45,8 @@ In the launcher, **Y** (y on a Classic Controller) says what each item still nee
 
 ## Updates
 
-From 1.1.0 on, the launcher looks for a newer version as it opens and asks before installing it
-(Settings > Check for updates). Your settings, saves and account stay.
+**Check for updates** on the launcher's main menu looks for a newer version and installs it.
+Your settings, saves and account stay.
 
 ## Back to the Homebrew Channel
 

@@ -81,6 +81,7 @@ The disc image is looked for as `/apps/melee/game.iso`, `/apps/melee/GALE01.iso`
 | **Slippi Online** | Shown once there is a disc image, an account and Slippi's files. The first start makes Slippi's menus from your disc (about a minute) |
 | **20XX** / **Modded Melee** | Shown with a mod's disc image; Left/Right picks among several |
 | **Settings**, **Game info**, **Exit** | Game info shows the disc, its MD5 check, the account and Slippi's files |
+| **Check for updates** | Looks for a newer release and installs it: see [Updates](#updates) |
 
 | | GameCube controller | Wii Remote (sideways, or its pointer) | Classic Controller |
 |---|---|---|---|
@@ -111,7 +112,6 @@ Kept in `sd:/apps/melee/settings.ini`.
 | Console mirroring | On, Off | Slippi Online's games |
 | Record Melee's games | Off, On | Replays and Console mirroring for Melee's games too: see below |
 | Skip this screen | Off, On | Starts the last choice at once. Hold B as it starts to get the launcher back: on a GameCube controller, or with none plugged in, 1 or B on a Wii Remote (b on its Classic Controller) |
-| Check for updates | On, Off | Asks GitHub for a newer release as the launcher opens: see [Updates](#updates) |
 | Diagnostics | Off, On | Records each online game's timing: [docs/netplay.md](docs/netplay.md#diagnostics) |
 | 20XX menu | Off, On | Slippi Online only. Shown with a 20XX image: see [20XX](#20xx) |
 
@@ -131,13 +131,15 @@ the start still asks.
 
 ### Updates
 
-With **Check for updates** on (the default) and an internet connection, the launcher asks this
-project's GitHub releases for a newer version as it opens. When there is one, it asks whether to
-update: A downloads the release (over TLS), checks it against the SHA-256 GitHub gives, and writes
-its files where the zip puts them, as installing by hand does; your settings, saves, account and
-disc images are not in it, so they stay. Then start Melee for the Wii again. A new version of
-Slippi Online comes this way: the matchmaking service only pairs players of Slippi's current
-version.
+**Check for updates** on the main menu asks this project's GitHub releases for a newer version,
+on a screen of its own: "Checking for updates...", for up to 30 seconds. B goes back to the menu
+at once; the check goes on, and choosing it again picks it up. It says when you are up to date, or
+why it could not check. When there is a newer version, it is installed there and then:
+the launcher downloads the release (over TLS), checks it against the SHA-256 GitHub gives, and
+writes its files where the zip puts them, as installing by hand does; your settings, saves,
+account and disc images are not in it, so they stay. Then start Melee for the Wii again. A new
+version of Slippi Online comes this way: the matchmaking service only pairs players of Slippi's
+current version.
 
 ## Slippi Online
 

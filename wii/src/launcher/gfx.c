@@ -280,3 +280,8 @@ void gfx_present(void)
     VIDEO_Flush();
     VIDEO_WaitVSync();
 }
+
+void gfx_wait_frame(void)
+{
+    VIDEO_WaitVSync();
+}

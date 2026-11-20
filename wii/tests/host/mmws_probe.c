@@ -15,7 +15,7 @@ int main(void)
 	SoUser user;
 	SoSearch search;
 	SoStunResult stun;
-	char join[2048], err[128], latest[24];
+	char join[2048], err[128];
 	u32 addr, t0;
 	int len;
 	SoMmwsState st = SO_MMWS_IDLE, last = -1;
@@ -38,7 +38,7 @@ int main(void)
 		if (st == SO_MMWS_FAILED || st == SO_MMWS_MATCHED || (st == SO_MMWS_IDLE && so_time_ms() - t0 > 1000)) break;
 		so_sleep_us(50000);
 	}
-	so_mmws_error(err, sizeof(err), latest, sizeof(latest));
-	printf("error: %s, latest: %s\n", err, latest);
+	so_mmws_error(err, sizeof(err));
+	printf("error: %s\n", err);
 	return st == SO_MMWS_FAILED ? 0 : 1;
 }

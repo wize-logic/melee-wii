@@ -23,7 +23,6 @@ typedef struct {
 	SoMmState state;
 	u16 port;
 	char error[128];
-	char latest_version[24];
 	SoMatchResult result;
 	/* the search */
 	SoConfig config;
@@ -140,7 +139,6 @@ int so_mm_start(const SoConfig *config, const SoUser *user, const SoSearch *sear
 	memset(&mm.result, 0, sizeof(mm.result));
 	memset(&mm.stun, 0, sizeof(mm.stun));
 	mm.error[0] = '\0';
-	mm.latest_version[0] = '\0';
 	mm.port = port;
 	mm.config = *config;
 	mm.user = *user;
@@ -236,7 +234,7 @@ static void poll_session(void)
 	}
 	case SO_MMWS_FAILED: {
 		char text[128];
-		so_mmws_error(text, sizeof(text), mm.latest_version, sizeof(mm.latest_version));
+		so_mmws_error(text, sizeof(text));
 		fail(text);
 		break;
 	}
@@ -287,11 +285,6 @@ const char *so_mm_error(void)
 const SoMatchResult *so_mm_result(void)
 {
 	return mmp ? &mm.result : NULL;
-}
-
-const char *so_mm_latest_version(void)
-{
-	return mmp ? mm.latest_version : "";
 }
 
 u16 so_mm_port(void)

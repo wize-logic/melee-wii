@@ -34,8 +34,7 @@ SoMmwsState so_mmws_state(void);
 /* SO_MMWS_MATCHED: copies the match message (once); returns its length or
  * < 0. */
 int so_mmws_take_result(char *out, int size);
-/* SO_MMWS_FAILED: the text for the player, and the version the service
- * named in its error ("" for none). */
-void so_mmws_error(char *out, int size, char *latest, int latest_size);
+/* SO_MMWS_FAILED: the text for the player. */
+void so_mmws_error(char *out, int size);
 
 #endif

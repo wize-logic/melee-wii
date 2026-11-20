@@ -279,9 +279,5 @@ writes `input_delay`; the rest is by hand. `so_config.h` describes every key.
 | `app_version` | the Slippi Dolphin version to claim | `3.7.0` |
 | `mm_host`, `mm_port`, `mm_path`, `mm_tls` | the matchmaking service (`mm_tls=0`: `ws://`, a test service) | `matchmaking.slippi.gg`, `443`, `/v1/queue`, `1` |
 
-`app_version` is never raised on the service's word: claiming a version only works while the
-client's netplay is that Dolphin's, and 3.7.0 showed a new version can change everything. When
-Slippi moves on, the service turns searches down as outdated, and the log names its version.
-
 The `test_*` keys make lag, packet loss and slow savestates for tests (`test_rx_stall_ms` makes
 the lag spikes the long rollbacks are tested with).

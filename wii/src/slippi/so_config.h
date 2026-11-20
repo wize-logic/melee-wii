@@ -19,8 +19,8 @@
 
 /* The Slippi Dolphin (Ishiiruka) version whose online play this client
  * implements, as it tells the matchmaking service; the service only pairs
- * players of one version. It is never raised on the service's word: a
- * newer Slippi needs a new release (the launcher's updates fetch it). */
+ * players of one version: a newer Slippi needs a new release (the
+ * launcher's updates fetch it). */
 #define SO_APP_VERSION_DEFAULT "3.7.0"
 /* The matchmaking service (3.7.0: a WebSocket over TLS) */
 #define SO_MM_HOST_DEFAULT "matchmaking.slippi.gg"
@@ -32,7 +32,6 @@ typedef struct {
 	char play_key[96];
 	char connect_code[16];	/* "ABCD#123" */
 	char display_name[64];	/* UTF-8 */
-	char latest_version[24];
 } SoUser;
 
 typedef struct {

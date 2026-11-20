@@ -325,9 +325,6 @@ static void step(void)
 	case SO_CLIENT_SEARCHING:
 		so_mm_poll();
 		if (so_mm_state() == SO_MM_ERROR) {
-			if (so_mm_latest_version()[0])
-				so_log("client: Slippi %s is out; this client plays %s: the launcher's update gets it",
-					so_mm_latest_version(), c.config.app_version);
 			set_error(so_mm_error());
 		} else if (so_mm_state() == SO_MM_MATCHED) {
 			c.match = *so_mm_result();

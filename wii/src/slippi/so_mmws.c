@@ -43,7 +43,7 @@ static int s_use_tls;
 static volatile SoMmwsState s_state = SO_MMWS_IDLE;
 static char *s_result;
 static int s_result_len;
-static char s_error[128], s_latest[24];
+static char s_error[128];
 
 static int stopped(u32 id)
 {
@@ -58,12 +58,11 @@ static void set_state(u32 id, SoMmwsState state)
 	so_mutex_unlock(&s_lock);
 }
 
-static void set_failed(u32 id, const char *text, const char *latest)
+static void set_failed(u32 id, const char *text)
 {
 	so_mutex_lock(&s_lock);
 	if (s_session == id) {
 		strlcpy(s_error, text, sizeof(s_error));
-		strlcpy(s_latest, latest ? latest : "", sizeof(s_latest));
 		s_state = SO_MMWS_FAILED;
 	}
 	so_mutex_unlock(&s_lock);
@@ -139,12 +138,9 @@ static int run_connection(u32 id, const char *first, char *ticket, int ticket_si
 				so_tls_close(s_tls);
 				return RUN_DONE;
 			} else if (strcmp(type, "error") == 0) {
-				char text[128], latest[24];
+				char text[128];
 				so_json_get_string(&doc, "error", text, sizeof(text), "Received an error from the mm server");
-				so_json_get_string(&doc, "latestVersion", latest, sizeof(latest), "");
-				if (latest[0])
-					so_log("mm: the service's latest version is %s", latest);
-				set_failed(id, text, latest);
+				set_failed(id, text);
 				so_ws_send_close(s_ws);
 				so_tls_close(s_tls);
 				return RUN_DONE;
@@ -158,7 +154,7 @@ static int run_connection(u32 id, const char *first, char *ticket, int ticket_si
 		}
 		if (!joined && now - opened >= JOIN_TIMEOUT_MS) {
 			if (!ticket[0]) {
-				set_failed(id, "Failed to join mm queue", NULL);
+				set_failed(id, "Failed to join mm queue");
 				so_tls_close(s_tls);
 				return RUN_DONE;
 			}
@@ -196,11 +192,11 @@ static void run_session(u32 id)
 			break;
 		if (!ticket[0]) {
 			if (res == RUN_LOST) {
-				set_failed(id, "Lost connection to the mm server", NULL);
+				set_failed(id, "Lost connection to the mm server");
 				break;
 			}
 			if (++attempts >= CONNECT_ATTEMPTS) {
-				set_failed(id, "Failed to connect to mm server", NULL);
+				set_failed(id, "Failed to connect to mm server");
 				break;
 			}
 		} else {
@@ -209,7 +205,7 @@ static void run_session(u32 id)
 				so_log("mm: connection lost; resuming");
 			}
 			if ((s32)(so_time_ms() - lost_deadline) >= 0) {
-				set_failed(id, "Lost connection to the mm server", NULL);
+				set_failed(id, "Lost connection to the mm server");
 				break;
 			}
 		}
@@ -268,7 +264,6 @@ int so_mmws_start(const char *host, u32 addr, u16 port, const char *path, int tl
 	s_use_tls = tls;
 	s_result_len = -1;
 	s_error[0] = '\0';
-	s_latest[0] = '\0';
 	s_state = SO_MMWS_CONNECTING;
 	s_session++;
 	so_mutex_unlock(&s_lock);
@@ -307,10 +302,9 @@ int so_mmws_take_result(char *out, int size)
 	return len;
 }
 
-void so_mmws_error(char *out, int size, char *latest, int latest_size)
+void so_mmws_error(char *out, int size)
 {
 	so_mutex_lock(&s_lock);
 	strlcpy(out, s_error[0] ? s_error : "Matchmaking was cancelled", size);
-	strlcpy(latest, s_latest, latest_size);
 	so_mutex_unlock(&s_lock);
 }

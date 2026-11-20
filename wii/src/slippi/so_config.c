@@ -238,7 +238,6 @@ int so_user_parse(SoUser *user, const char *text, u32 len)
 	so_json_get_string(&doc, "playKey", user->play_key, sizeof(user->play_key), "");
 	so_json_get_string(&doc, "connectCode", user->connect_code, sizeof(user->connect_code), "");
 	so_json_get_string(&doc, "displayName", user->display_name, sizeof(user->display_name), "");
-	so_json_get_string(&doc, "latestVersion", user->latest_version, sizeof(user->latest_version), "");
 	if (!user->uid[0] || !user->play_key[0] || !strchr(user->connect_code, '#'))
 		return -2;
 	return 0;

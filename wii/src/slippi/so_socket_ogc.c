@@ -589,6 +589,12 @@ u32 so_local_ip(void)
     return s_net_ready ? s_ip : 0;
 }
 
+void so_socket_note_net_up(void)
+{
+    s_ip = net_gethostip();
+    s_net_ready = 1;
+}
+
 void so_socket_stats(SoSocketStats* out)
 {
     so_mutex_lock(&s_stats_lock);

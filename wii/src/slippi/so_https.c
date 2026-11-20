@@ -117,13 +117,20 @@ static int request(SoTls *tls, const char *url, const char *accept, const char *
 		so_snprintf(error, error_size, "bad address: %.60s", url);
 		return -1;
 	}
-	if (so_resolve(host, &addr) < 0) {
-		so_snprintf(error, error_size, "could not find %s (DNS)", host);
-		return -1;
-	}
-	if (so_tls_open(tls, host, addr, 443, 1, TIMEOUT_MS) < 0) {
-		so_snprintf(error, error_size, "%s: %s", host, so_tls_error_text(tls));
-		return -1;
+	{
+		u32 t = so_time_ms();
+		if (so_resolve(host, &addr) < 0) {
+			so_snprintf(error, error_size, "could not find %s (DNS)", host);
+			return -1;
+		}
+		so_log("https: %s is %u.%u.%u.%u (%u ms)", host, (unsigned)(addr >> 24), (unsigned)(addr >> 16) & 0xFF,
+			(unsigned)(addr >> 8) & 0xFF, (unsigned)addr & 0xFF, (unsigned)(so_time_ms() - t));
+		t = so_time_ms();
+		if (so_tls_open(tls, host, addr, 443, 1, TIMEOUT_MS) < 0) {
+			so_snprintf(error, error_size, "%s: %s", host, so_tls_error_text(tls));
+			return -1;
+		}
+		so_log("https: TLS to %s open (%u ms)", host, (unsigned)(so_time_ms() - t));
 	}
 	req = (char *)malloc(2048);
 	if (!req) {

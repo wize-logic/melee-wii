@@ -25,6 +25,7 @@
 #include "../slippi/so_https.h"
 #include "../slippi/so_json.h"
 #include "../slippi/so_platform.h"
+#include "../slippi/so_socket.h"
 #include "bearssl.h"
 
 #define API_URL "https://api.github.com/repos/" MELEE_WII_UPDATE_REPO "/releases/latest"
@@ -43,6 +44,7 @@ static int s_have_sha;
 static void failed(const char* text)
 {
     snprintf(s_error, sizeof(s_error), "%s", text);
+    so_log("update: check failed: %s", text);
     s_state = UPDATE_FAILED;
 }
 
@@ -110,10 +112,14 @@ static u32 CheckThread(void* unused)
     u8* body = NULL;
     u32 len = 0;
     char error[96];
+    u32 start = so_time_ms(), net_ms;
     (void) unused;
     s_state = UPDATE_CHECKING;
+    so_log("update: bringing the network up");
     for (int tries = 0;; tries++) {
+        u32 t = so_time_ms();
         s32 res = net_init();
+        so_log("update: net_init %d after %u ms", (int) res, (unsigned) (so_time_ms() - t));
         if (res >= 0) {
             break;
         }
@@ -123,6 +129,12 @@ static u32 CheckThread(void* unused)
         }
         so_sleep_us(2000000);
     }
+    net_ms = so_time_ms() - start;
+    /* (so_resolve, under so_https_get, looks a name up only once the network
+     * is noted as up: so_socket_ogc.c's own thread notes it for Slippi Online,
+     * which this check runs before) */
+    so_socket_note_net_up();
+    so_log("update: asking GitHub");
     so_entropy_init();
     if (so_https_get(API_URL, "application/vnd.github+json", USER_AGENT, 1u << 20, &body, &len, NULL, NULL, error,
                      sizeof(error)) < 0)
@@ -136,6 +148,8 @@ static u32 CheckThread(void* unused)
         return 0;
     }
     free(body);
+    so_log("update: network up in %u ms, GitHub's answer %u ms after: latest %s", (unsigned) net_ms,
+           (unsigned) (so_time_ms() - start - net_ms), s_version);
     s_state = so_version_newer(s_version, MELEE_WII_VERSION) ? UPDATE_AVAILABLE : UPDATE_NONE;
     return 0;
 }

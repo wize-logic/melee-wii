@@ -98,6 +98,10 @@ int so_socket_wait(u32 timeout_us);
 int so_resolve(const char *host, u32 *addr);
 /* This console's IPv4 address, or 0 when it has none yet. */
 u32 so_local_ip(void);
+/* The network brought up outside so_socket_init's thread (net_init: the
+ * launcher's update check, launcher/update.c): so_resolve works from then
+ * on, as it does once that thread has brought it up. */
+void so_socket_note_net_up(void);
 
 /* Diagnostics only: one asynchronous IOS sendto on the session socket, the
  * way builds 1-4 sent (and froze the console), optionally answering the

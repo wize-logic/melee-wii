@@ -84,6 +84,11 @@ void so_log(const char *fmt, ...)
 	fflush(stdout);
 }
 
+/* (Linux's DNS needs nothing noted: so_resolve below always works) */
+void so_socket_note_net_up(void)
+{
+}
+
 int so_resolve(const char *host, u32 *addr)
 {
 	struct addrinfo hints, *res;

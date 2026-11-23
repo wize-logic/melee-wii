@@ -75,7 +75,7 @@ _Static_assert(sizeof(Poll) == 16 && sizeof(Packet) == 8 && sizeof(Event) == 8, 
 #define SPARE (256u * 1024u) /* MEM2 left alone for the rest */
 #define TEXT_SIZE 4096u
 #define CHUNK (32u * 1024u)
-#define FOLDER "sd:/apps/melee/logs/diag"
+const char* melee_wii_app_dir(void); /* (main.c) */
 
 enum { IDLE, RECORDING, ENDED };
 
@@ -300,7 +300,7 @@ static void write_file(void)
     u32 polls = s_poll_count * sizeof(Poll), packets = s_packet_count * sizeof(Packet);
     u32 events = (s_event_count < s_max_events ? s_event_count : s_max_events) * sizeof(Event);
     int ok;
-    so_snprintf(name, sizeof(name), FOLDER "/game-%04d%02d%02dT%02d%02d%02d.bin", t->tm_year + 1900, t->tm_mon + 1,
+    so_snprintf(name, sizeof(name), "%s/logs/diag/game-%04d%02d%02dT%02d%02d%02d.bin", melee_wii_app_dir(), t->tm_year + 1900, t->tm_mon + 1,
                 t->tm_mday, t->tm_hour, t->tm_min, t->tm_sec);
     file = so_file_create(name);
     if (file == NULL) {
@@ -363,9 +363,9 @@ static void take_memory(void)
         }
     }
     if (s_enabled) {
-        so_log("diag: on: each online game's record goes to " FOLDER " (%u KB kept for it: %u minutes of a game; "
+        so_log("diag: on: each online game's record goes to %s/logs/diag (%u KB kept for it: %u minutes of a game; "
                "MEM2 had %u KB free in the heap and %u KB not taken)",
-               (unsigned) ((s_max_polls * sizeof(Poll) + s_max_packets * sizeof(Packet) + s_max_events * sizeof(Event)) /
+               melee_wii_app_dir(), (unsigned) ((s_max_polls * sizeof(Poll) + s_max_packets * sizeof(Packet) + s_max_events * sizeof(Event)) /
                            1024),
                (unsigned) (s_max_polls / 3600), (unsigned) (before.fordblks / 1024),
                (unsigned) ((end > top ? end - top : 0) / 1024));

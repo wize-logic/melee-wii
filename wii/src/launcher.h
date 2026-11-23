@@ -19,7 +19,7 @@ enum { LAUNCH_MELEE, LAUNCH_ONLINE, LAUNCH_MOD };
  * is given without a setting of the player's asking for it) */
 #define LAUNCH_SCREEN_AUTO 3
 
-/* sd:/apps/melee/settings.ini. The online rumble and input delay are
+/* apps/melee/settings.ini (on the drive the port started from). The online rumble and input delay are
  * Slippi's own files (rumble.txt, config.ini in its folder); the character
  * select screen writes delay.txt, the Manual delay's number. */
 typedef struct LauncherSettings {
@@ -47,8 +47,13 @@ void launcher_settings_default(LauncherSettings* s);
 int launcher_settings_load(LauncherSettings* s, const char* path);
 int launcher_settings_save(const LauncherSettings* s, const char* path);
 
-#define LAUNCHER_DIR "sd:/apps/melee"
-#define LAUNCHER_SETTINGS LAUNCHER_DIR "/settings.ini"
-#define LAUNCHER_SLIPPI LAUNCHER_DIR "/slippi"
+/* apps/melee on the drive the port was started from (main.c) */
+const char* melee_wii_app_dir(void);
+const char* melee_wii_slippi_dir(void);
+const char* melee_wii_settings_path(void);
+const char* melee_wii_drive_name(void); /* "SD card" or "USB drive" */
+#define LAUNCHER_DIR melee_wii_app_dir()
+#define LAUNCHER_SETTINGS melee_wii_settings_path()
+#define LAUNCHER_SLIPPI melee_wii_slippi_dir()
 
 #endif

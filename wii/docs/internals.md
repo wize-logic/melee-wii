@@ -70,14 +70,15 @@ music matches exactly).
 - AX's output buffers go on 32 bytes: the audio interface's DMA drops an address's low five bits,
   and a buffer 16 bytes off plays 4 samples from before it every 10 ms (a buzz under everything).
   MWCC's link put them there; GCC has to be told (`AX_DMA_ALIGN`).
-- The SD card is faster than the disc: a music stream's header and its first block can arrive in
-  the same 5 ms audio frame, which the SDK's AX syncs so that the voice's loop flag is lost, and
-  the music stops after its first block. `ax_wii.c` keeps the whole address block.
+- The SD card and a USB drive are faster than the disc: a music stream's header and its first block
+  can arrive in the same 5 ms audio frame, which the SDK's AX syncs so that the voice's loop flag is
+  lost, and the music stops after its first block. `ax_wii.c` keeps the whole address block.
 
 ## Crashes and stalls
 
-- **A crash** (`stall.c`) is written to `sd:/apps/melee/logs/log.txt` and shown on the screen: the
-  exception, where, the registers, the code around it, the calls, the hardware's state.
+- **A crash** (`stall.c`) is written to `/apps/melee/logs/log.txt`, on the drive Melee was
+  started from, and shown on the screen: the exception, where, the registers, the code around it,
+  the calls, the hardware's state.
 - **A stall** (no new frame for 5 s) is logged once: what the game's main thread waits in, its
   calls, and the state of the GPU, VI, DSP, audio interface and disc.
 - The log also goes to Dolphin's OSREPORT log.
@@ -87,7 +88,8 @@ music matches exactly).
 Dolphin runs the DOL with an SD card image or folder. Its Wii sockets are the PC's: Slippi
 Launcher on the same PC can mirror `127.0.0.1`.
 
-Files in `sd:/apps/melee/` that tests look for:
+Files in `sd:/apps/melee/` that tests look for (on the SD card only, whichever drive Melee was
+started from):
 
 | File | |
 |---|---|
@@ -105,7 +107,7 @@ Tools on the PC (`wii/tools`):
 | `gamelog.py` | Reads the Diagnostics records |
 | `fp_compare.py` | Compares the floating-point code of the game's functions as MWCC built them and as GCC does |
 | `stage_check.py`, `mod_menu.py` | 20XX: the file check's reference, and a lister of its menu |
-| `slippi_files.py` | Makes Slippi's SD card files on a PC, from your disc |
+| `slippi_files.py` | Makes Slippi's files for the Wii's SD card or USB drive on a PC, from your disc |
 | `make_font.py`, `make_icon.py` | The launcher's font and the Homebrew Channel icon (run by hand; their output is checked in) |
 
 **`MELEE_SYNCTEST`** (`src/melee/gm/synctest.inc`) is a determinism test: defined in the matching

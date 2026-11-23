@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Makes the release zip of Melee for the Wii: the files to put on the SD card.
+"""Makes the release zip of Melee for the Wii: the files to put on the SD card
+(or the USB drive the Homebrew Channel starts it from).
 
     cmake --build --preset wii                                   # build/wii/melee.dol
     python3 wii/tools/make_release.py --iso Melee.iso            # build/release/melee-wii-v1.1.0.zip
 
-The zip mirrors the SD card (extract it onto the card):
+The zip mirrors the drive (extract it onto its top):
 
     apps/melee/                         the app (Homebrew Channel): boot.dol, meta.xml, icon.png
     apps/melee/slippi/netplay.gct       Slippi's online code (as Slippi Dolphin runs it)
@@ -52,20 +53,23 @@ You need: a Wii with the Homebrew Channel, your own NTSC 1.02 Melee disc image
 connection set up in Wii Settings and a Slippi account (log in once with Slippi
 Launcher on your PC: https://slippi.gg).
 
-1. Extract this zip onto your Wii's SD card (it adds apps/melee and this
-   folder's two files; nothing else is changed).
-2. Put your disc image on the card as /apps/melee/game.iso (or /games/melee.iso,
-   on the SD card or a USB drive).
-3. For Slippi Online: double-click "Copy my Slippi account (Melee).bat" on the
-   SD card (it copies your login from Slippi Launcher), or copy user.json into
-   /apps/melee/slippi by hand.
+1. Extract this zip onto the top of your Wii's SD card, so the card has
+   apps/melee/boot.dol (it adds apps/melee and these two files; nothing else
+   is changed). A FAT32 USB drive works in place of the SD card: Melee keeps
+   its settings, saves and Slippi account on the drive it was started from.
+2. Put your disc image on the SD card or a USB drive as /apps/melee/game.iso
+   (or /games/melee.iso).
+3. For Slippi Online: double-click "Copy my Slippi account (Melee).bat" on
+   the drive you start Melee from (it copies your login from Slippi Launcher),
+   or copy user.json into /apps/melee/slippi on that drive by hand.
 4. Start "Melee for the Wii" from the Homebrew Channel and pick Melee or
    Slippi Online. The first Slippi Online start makes Slippi's menus from your
    disc (a minute).
 
 Melee is the game as your disc has it (in widescreen on a Wii set to 16:9);
-Slippi's offline codes are in Settings, each off until you turn it on. Melee's saves go to /apps/melee/card (Slippi's
-to /apps/melee/cardslippi), replays to /apps/melee/slippi/replays, your cheats
+Slippi's offline codes are in Settings, each off until you turn it on. On the
+drive you start Melee from, Melee's saves go to /apps/melee/card (Slippi's to
+/apps/melee/cardslippi), replays to /apps/melee/slippi/replays, and your cheats
 (offline) are /apps/melee/codes/GALE01.gct.
 
 To return to the Homebrew Channel: in the launcher, choose Exit (or press HOME

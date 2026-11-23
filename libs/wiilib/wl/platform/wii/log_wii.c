@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 // The log's sink (platform.h): each line to the EXI UART
-// through SYS_Report (Dolphin's OSREPORT log; harmless on hardware), and to a file on the SD card.
+// through SYS_Report (Dolphin's OSREPORT log; harmless on hardware), and to a file on the SD card
+// or a USB drive (the folder given: "sd:/..." or "usb:/...").
 // The sink can be called with interrupts disabled, from an interrupt even: the file's lines go
 // to a buffer, which a thread of its own writes out.
 #include <gccore.h>
@@ -87,7 +88,8 @@ void wl_platform_log_init(const char *sd_dir) {
         g_installed = true;
         wl_log_set_sink(sink, NULL);
     }
-    if (sd_dir == NULL || g_file != NULL || !wl_platform_fs_mounted(WL_DEVICE_SD)) {
+    if (sd_dir == NULL || g_file != NULL ||
+        !wl_platform_fs_mounted(strncmp(sd_dir, "usb:", 4) == 0 ? WL_DEVICE_USB : WL_DEVICE_SD)) {
         return;
     }
     // each level of the folder made in turn
@@ -97,7 +99,8 @@ void wl_platform_log_init(const char *sd_dir) {
         return;
     }
     memcpy(path, sd_dir, len + 1);
-    for (size_t i = sizeof "sd:/"; i <= len; i++) {
+    const char *top = strstr(path, ":/");
+    for (size_t i = top != NULL ? (size_t) (top - path) + 3 : 0; i <= len; i++) {
         if (path[i] == '/' || path[i] == '\0') {
             char c = path[i];
             path[i] = '\0';

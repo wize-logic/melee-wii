@@ -16,5 +16,5 @@ port replaces (`wii/src/vi.c` does that step, as for 20XX's lag reduction, which
 and its hook at the boot's progressive scan question, which would put the game in 480p whatever
 the cable (the port answers that question from Wii Settings).
 
-The online codeset itself is not here: it is `netplay.gct` on the SD card, from the release zip
-(`wii/tools/slippi_files.py`).
+The online codeset itself is not here: it is `netplay.gct` in `/apps/melee/slippi` on the Wii's
+SD card or USB drive, from the release zip (`wii/tools/slippi_files.py`).

@@ -26,7 +26,7 @@
 #include <wl/base/base.h>
 #include <wl/platform/platform.h>
 
-static const char* s_card_dir = "sd:/apps/melee/card";
+static const char* s_card_dir = NULL; /* (the port's folder's card: main.c) */
 #define CARD_DIR s_card_dir
 
 /* The launcher (before the game's CARDInit): Slippi and 20XX keep their saves
@@ -150,7 +150,7 @@ _Static_assert(sizeof(CARDDir) == CARD_ENTRY_SIZE, "CARDDir is a GCI header");
 typedef struct Slot {
     CARDDir ent;          /* gameName[0] 0xFF: free */
     u8* data;             /* ent.length blocks, in MEM2 */
-    char path[96];        /* its file on the SD card, "" before its first write */
+    char path[96];        /* its file in CARD_DIR, "" before its first write */
     volatile BOOL dirty;  /* to be written */
     volatile BOOL doomed; /* its file to be removed */
 } Slot;
@@ -380,12 +380,24 @@ void CARDInit(void)
     for (int i = 0; i < CARD_MAX_FILE; i++) {
         memset(&s_slots[i].ent, 0xFF, sizeof(CARDDir));
     }
-    if (!wl_platform_fs_mounted(WL_DEVICE_SD)) {
-        OSReport("CARD: no SD card: no memory card in slot A\n");
+    if (s_card_dir == NULL) {
+        static char own[40];
+        const char* melee_wii_app_dir(void);
+        snprintf(own, sizeof(own), "%s/card", melee_wii_app_dir());
+        s_card_dir = own;
+    }
+    if (!wl_platform_fs_mounted(strncmp(CARD_DIR, "usb:", 4) == 0 ? WL_DEVICE_USB : WL_DEVICE_SD)) {
+        OSReport("CARD: %s is not there: no memory card in slot A\n", CARD_DIR);
         return;
     }
-    wl_platform_fs_mkdir("sd:/apps");
-    wl_platform_fs_mkdir("sd:/apps/melee");
+    {
+        char dir[40];
+        const char* melee_wii_drive_root(void);
+        const char* melee_wii_app_dir(void);
+        snprintf(dir, sizeof(dir), "%sapps", melee_wii_drive_root());
+        wl_platform_fs_mkdir(dir);
+        wl_platform_fs_mkdir(melee_wii_app_dir());
+    }
     wl_platform_fs_mkdir(CARD_DIR);
     s_write_buffer = memalign(32, CARD_ENTRY_SIZE + CARD_USER_BLOCKS * CARD_SECTOR_SIZE);
     if (s_write_buffer == NULL) {

@@ -181,6 +181,11 @@ int mods_start(const ModDisc* m, char* error, int error_size)
         return -4;
     }
     /* its saves apart from Melee's (20XX keeps its settings in the save) */
-    melee_wii_card_dir(m->is_20xx ? "sd:/apps/melee/card20xx" : "sd:/apps/melee/cardmod");
+    {
+        static char card[40];
+        const char* melee_wii_app_dir(void);
+        snprintf(card, sizeof(card), "%s/%s", melee_wii_app_dir(), m->is_20xx ? "card20xx" : "cardmod");
+        melee_wii_card_dir(card);
+    }
     return 0;
 }

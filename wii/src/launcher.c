@@ -31,18 +31,20 @@ static int exists(const char* path)
  * each online game there, about 1 MB a game): made if need be, and only its
  * newest DIAG_KEPT records kept (their names are their dates, so the oldest
  * is the first by name). */
-#define DIAG_DIR LAUNCHER_DIR "/logs/diag"
 #define DIAG_KEPT 40
 
 static void diagnostics_folder(void)
 {
-    mkdir(LAUNCHER_DIR "/logs", 0777);
-    mkdir(DIAG_DIR, 0777);
+    char diag[48];
+    snprintf(diag, sizeof(diag), "%s/logs", LAUNCHER_DIR);
+    mkdir(diag, 0777);
+    snprintf(diag, sizeof(diag), "%s/logs/diag", LAUNCHER_DIR);
+    mkdir(diag, 0777);
     for (int pass = 0; pass < 200; pass++) {
         char oldest[64] = "", path[128];
         int count = 0;
         struct dirent* e;
-        DIR* dir = opendir(DIAG_DIR);
+        DIR* dir = opendir(diag);
         if (dir == NULL) {
             return;
         }
@@ -62,7 +64,7 @@ static void diagnostics_folder(void)
         if (count < DIAG_KEPT) {
             return;
         }
-        snprintf(path, sizeof(path), DIAG_DIR "/%s", oldest);
+        snprintf(path, sizeof(path), "%s/%s", diag, oldest);
         if (remove(path) != 0) {
             return;
         }
@@ -76,8 +78,10 @@ int launcher_slippi_folder(void)
     char user[128];
     mkdir(LAUNCHER_DIR, 0777);
     mkdir(LAUNCHER_SLIPPI, 0777);
-    mkdir(LAUNCHER_SLIPPI "/files", 0777);
-    mkdir(LAUNCHER_SLIPPI "/replays", 0777);
+    snprintf(user, sizeof(user), "%s/files", LAUNCHER_SLIPPI);
+    mkdir(user, 0777);
+    snprintf(user, sizeof(user), "%s/replays", LAUNCHER_SLIPPI);
+    mkdir(user, 0777);
     snprintf(user, sizeof(user), "%s/user.json", LAUNCHER_SLIPPI);
     return exists(user) ? 0 : -1;
 }
@@ -86,9 +90,11 @@ int launcher_slippi_folder(void)
  * (wii/src/gecko.c) */
 static void load_cheats(void)
 {
-    static const char* const PATHS[] = {
-        LAUNCHER_DIR "/codes/GALE01.gct", "sd:/codes/GALE01.gct", "usb:/codes/GALE01.gct",
+    char own[48];
+    const char* PATHS[] = {
+        own, "sd:/codes/GALE01.gct", "usb:/codes/GALE01.gct",
     };
+    snprintf(own, sizeof(own), "%s/codes/GALE01.gct", LAUNCHER_DIR);
     for (size_t i = 0; i < sizeof(PATHS) / sizeof(PATHS[0]); i++) {
         FILE* f = fopen(PATHS[i], "rb");
         long size;
@@ -226,7 +232,9 @@ void melee_wii_launch(void)
          * Melee's, and made without the game asking (card.c) */
         void melee_wii_card_dir(const char* dir);
         void melee_wii_card_quiet_create(int on);
-        melee_wii_card_dir(LAUNCHER_DIR "/cardslippi");
+        static char card[40];
+        snprintf(card, sizeof(card), "%s/cardslippi", LAUNCHER_DIR);
+        melee_wii_card_dir(card);
         melee_wii_card_quiet_create(1);
     }
     so.diagnostics = s.diagnostics;
@@ -238,7 +246,7 @@ void melee_wii_launch(void)
     }
     if (so.online && launcher_slippi_folder() < 0) {
         melee_wii_fatal("Slippi Online needs your Slippi account: copy user.json from\n"
-                        "Slippi Launcher into %s on the SD card.", LAUNCHER_SLIPPI);
+                        "Slippi Launcher into %s.", LAUNCHER_SLIPPI);
     }
     WL_LOG_I("launcher", "starting %s", so.online ? "Slippi Online" : "Melee");
     /* (the screen was skipped: before Slippi Online's start, as the screen

@@ -570,10 +570,60 @@ static void gx_reset(void)
     }
 }
 
+/* The port's own folder: apps/melee on the drive the Homebrew Channel
+ * started it from (argv[0]: "usb:/apps/melee/boot.dol"), else on the SD card,
+ * else on a USB drive that has it (a loader that passes no path). Its
+ * settings, Slippi's folder and account, saves, codes and logs are there. */
+static char s_drive[8] = "sd:/";
+static char s_app_dir[24] = "sd:/apps/melee";
+static char s_slippi_dir[32] = "sd:/apps/melee/slippi";
+static char s_settings[40] = "sd:/apps/melee/settings.ini";
+
+const char* melee_wii_drive_root(void)
+{
+    return s_drive;
+}
+
+const char* melee_wii_app_dir(void)
+{
+    return s_app_dir;
+}
+
+const char* melee_wii_slippi_dir(void)
+{
+    return s_slippi_dir;
+}
+
+const char* melee_wii_settings_path(void)
+{
+    return s_settings;
+}
+
+/* For the player: "SD card" or "USB drive" */
+const char* melee_wii_drive_name(void)
+{
+    return strncmp(s_drive, "usb:", 4) == 0 ? "USB drive" : "SD card";
+}
+
+static void pick_app_dir(int argc, char** argv)
+{
+    const char* path = argc > 0 && argv != NULL && argv[0] != NULL ? argv[0] : "";
+    int from_usb = strncmp(path, "usb:", 4) == 0;
+    if (!from_usb && (strncmp(path, "sd:", 3) == 0 || wl_platform_fs_exists("sd:/apps/melee/boot.dol"))) {
+        return;
+    }
+    if (wl_platform_fs_mount(WL_DEVICE_USB) != WL_OK ||
+        (!from_usb && !wl_platform_fs_exists("usb:/apps/melee/boot.dol"))) {
+        return;
+    }
+    snprintf(s_drive, sizeof(s_drive), "usb:/");
+    snprintf(s_app_dir, sizeof(s_app_dir), "%sapps/melee", s_drive);
+    snprintf(s_slippi_dir, sizeof(s_slippi_dir), "%s/slippi", s_app_dir);
+    snprintf(s_settings, sizeof(s_settings), "%s/settings.ini", s_app_dir);
+}
+
 int main(int argc, char** argv)
 {
-    (void) argc;
-    (void) argv;
     melee_wii_reserve_arena();
 
 #ifndef MELEE_ORIG_CODE
@@ -590,7 +640,12 @@ int main(int argc, char** argv)
     wl_platform_system_init();
     wl_platform_set_exit_hook(before_exit);
     wl_platform_fs_mount(WL_DEVICE_SD);
-    wl_platform_log_init("sd:/apps/melee/logs");
+    pick_app_dir(argc, argv);
+    {
+        char logs[40];
+        snprintf(logs, sizeof(logs), "%s/logs", s_app_dir);
+        wl_platform_log_init(logs);
+    }
     s_main_thread = LWP_GetSelf();
     if (wl_platform_fs_exists("sd:/apps/melee/exittest")) {
         exit_test_stub();

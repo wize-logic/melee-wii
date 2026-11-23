@@ -333,7 +333,10 @@ static void crash_screen(const char* name, const PPCContext* c)
     printf("\n Super Smash Bros. Melee stopped: a crash.\n\n");
     printf(" %s exception at %08x (lr %08x)\n", name, (unsigned) c->pc, (unsigned) c->lr);
     printf(" data address %08x\n\n", (unsigned) s_crash_dar);
-    printf(" The details are in apps/melee/logs/log.txt on the SD card.\n\n");
+    {
+        const char* melee_wii_app_dir(void);
+        printf(" The details are in %s/logs/log.txt.\n\n", melee_wii_app_dir());
+    }
     printf(" Press RESET to go back to the Homebrew Channel.\n");
     VIDEO_SetNextFramebuffer(fb);
     VIDEO_SetBlack(false);

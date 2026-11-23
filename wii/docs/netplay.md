@@ -72,8 +72,8 @@ the match's heap. The port finds them from the game's own records.
   values. On the Wii the GPU's command FIFO ends in that region; the savestates start above it.
 - **Not in it,** unlike Slippi's: the game's disc and ARAM requests (HSD's devcom) and the music
   stream's counters, which run on the audio's time. On a PC Slippi plays the music; on the Wii the
-  game streams it from the SD card during the match, and a request rolled back with the frames
-  stopped the reads.
+  game streams it from the SD card or USB drive during the match, and a request rolled back with
+  the frames stopped the reads.
 
 ### Only what changed is copied
 
@@ -150,8 +150,8 @@ instruction where the link register is free, a branch to code of its own elsewhe
 the bodies of the SDK functions the port replaces and other unused MEM1. It tests itself at the
 start (the hashes in the log).
 
-Two files in `sd:/apps/melee` are for tests: `nofused` turns it off, and `fusedcount` counts the
-results that differ (in Dolphin, with a 32 MB MEM1).
+Two files in `sd:/apps/melee` (the SD card only) are for tests: `nofused` turns it off, and
+`fusedcount` counts the results that differ (in Dolphin, with a 32 MB MEM1).
 
 ## The input delay
 
@@ -215,9 +215,9 @@ Nintendo's Wii LAN Adapter, or a third-party one with that chip.
 ## Replays and console mirroring
 
 - **Replays** are what Slippi's recording codes send the device each game, written as the game
-  runs to `sd:/apps/melee/slippi/replays/Game_<date>T<time>.slp` (a whole game doesn't fit in
-  memory beside the savestates). The metadata holds the start time and `playedOn: "wii"` only. A
-  card too slow for the stream cuts the replay short.
+  runs to `/apps/melee/slippi/replays/Game_<date>T<time>.slp` (a whole game doesn't fit in
+  memory beside the savestates). The metadata holds the start time and `playedOn: "wii"` only. An
+  SD card or USB drive too slow for the stream cuts the replay short.
 - **Console mirroring** is Slippi Nintendont's protocol: Slippi Launcher connects to the Wii to
   watch, record or relay games.
 - **Melee's own games** are recorded and mirrored only with the launcher's **Record Melee's games**
@@ -233,7 +233,7 @@ Nintendo's Wii LAN Adapter, or a third-party one with that chip.
 For finding what makes online games run badly on a console and its connection. With the launcher's
 **Diagnostics** setting on, each online game is recorded in memory as it runs (nothing is written
 or logged during the game, so the record changes nothing of what it measures) and saved after it
-as `sd:/apps/melee/logs/diag/game-<date>T<time>.bin`, up to 1 MB a game; the newest 40 are kept.
+as `/apps/melee/logs/diag/game-<date>T<time>.bin`, up to 1 MB a game; the newest 40 are kept.
 The log gets a few `diag:` lines of summary for each game too.
 
 The record has:
@@ -266,8 +266,9 @@ minutes of a game, and with less room it holds less (the log says how much) or t
 
 ## `config.ini`
 
-`sd:/apps/melee/slippi/config.ini`, `key=value` lines (`#` or `;` starts a comment). The launcher
-writes `input_delay`; the rest is by hand. `so_config.h` describes every key.
+`/apps/melee/slippi/config.ini`, on the drive Melee was started from: `key=value` lines (`#` or `;`
+starts a comment). The launcher writes `input_delay`; the rest is by hand. `so_config.h` describes
+every key.
 
 | Key | Values | Default |
 |---|---|---|

@@ -321,9 +321,10 @@ static void draw_main(int focus_index, const SlippiStatus* st)
                 s_disc_state == 0 ? line : s_disc_state == -1 ? "none found" : "not Melee (GALE01)");
     if (st->have_account) {
         snprintf(line, sizeof(line), "%s (%s)", st->name, st->code);
+    } else {
+        snprintf(line, sizeof(line), "none: user.json in /apps/melee/slippi (%s)", melee_wii_drive_name());
     }
-    status_line(404, "Slippi account", st->have_account,
-                st->have_account ? line : "none: copy user.json to /apps/melee/slippi");
+    status_line(404, "Slippi account", st->have_account, line);
     status_line(424, "Connection", s_link > 0 ? 1 : -1, s_link >= 0 ? so_link_name(s_link) : "...");
     footer("A  choose      + / X  settings      - / Z  game info      Y  help");
 }
@@ -512,15 +513,15 @@ static int online_ready(void)
     char error[256];
     if (s_disc_state != 0) {
         message("No Melee disc image",
-                "Put your NTSC 1.02 dump on the SD card as /apps/melee/game.iso.",
+                "Put your NTSC 1.02 dump on the SD card or a USB drive as /apps/melee/game.iso.",
                 RED);
         return -1;
     }
     if (launcher_slippi_folder() < 0) {
-        message("No Slippi account",
-                "Log in with Slippi Launcher on a PC, then copy its user.json to /apps/melee/slippi. "
-                "Keep it private.",
-                RED);
+        snprintf(error, sizeof(error),
+                 "Log in with Slippi Launcher on a PC, then copy its user.json to /apps/melee/slippi "
+                 "on the %s. Keep it private.", melee_wii_drive_name());
+        message("No Slippi account", error, RED);
         return -1;
     }
 #if 0 /* Wi-Fi plays again (2026-11-10) */
@@ -536,9 +537,9 @@ static int online_ready(void)
 #endif
     slippi_status(&st);
     if (!st.have_codeset || st.missing_shipped) {
-        message("Slippi's files are missing",
-                "Copy /apps/melee/slippi from the release zip again.",
-                RED);
+        snprintf(error, sizeof(error), "Copy /apps/melee/slippi from the release zip to the %s again.",
+                 melee_wii_drive_name());
+        message("Slippi's files are missing", error, RED);
         return -1;
     }
     if (st.need_prepare) {
@@ -793,9 +794,10 @@ static void game_info(void)
         gfx_text(&font_small, x + 60, 238, GREY, "Slippi account");
         if (st.have_account) {
             snprintf(line, sizeof(line), "%s (%s)", st.name, st.code);
+        } else {
+            snprintf(line, sizeof(line), "none: user.json in /apps/melee/slippi (%s)", melee_wii_drive_name());
         }
-        text_fit(&font_small, x + 200, 238, st.have_account ? WHITE : RED,
-                 st.have_account ? line : "none: user.json in /apps/melee/slippi", 390, 0);
+        text_fit(&font_small, x + 200, 238, st.have_account ? WHITE : RED, line, 390, 0);
         gfx_text(&font_small, x + 60, 262, GREY, "Online code");
         gfx_text(&font_small, x + 200, 262, st.have_codeset ? WHITE : RED,
                  st.have_codeset ? "netplay.gct" : "missing");
@@ -855,6 +857,7 @@ static void help_page(void)
         int x = left();
         SlippiStatus st;
         int have_20xx = 0, y = 124;
+        char how[128];
         if (in & (IN_A | IN_B | IN_Y | IN_START)) {
             return;
         }
@@ -866,10 +869,12 @@ static void help_page(void)
         gfx_round_rect(x + 40, 112, 560, 324, 14, PANEL, 235);
         help_item(x, &y, "Melee disc image", s_disc_state == 0,
                   "Your NTSC 1.02 dump, as /apps/melee/game.iso.");
-        help_item(x, &y, "Slippi account", st.have_account,
-                  "Copy user.json from Slippi Launcher to /apps/melee/slippi.");
-        help_item(x, &y, "Slippi's files", st.have_codeset && !st.missing_shipped,
-                  "From the release zip, in /apps/melee/slippi.");
+        snprintf(how, sizeof(how), "Copy user.json from Slippi Launcher to /apps/melee/slippi on the %s.",
+                 melee_wii_drive_name());
+        help_item(x, &y, "Slippi account", st.have_account, how);
+        snprintf(how, sizeof(how), "From the release zip, in /apps/melee/slippi on the %s.",
+                 melee_wii_drive_name());
+        help_item(x, &y, "Slippi's files", st.have_codeset && !st.missing_shipped, how);
         help_item(x, &y, "20XX image", have_20xx,
                   "A 20XX Hack Pack image on the SD card or a USB drive.");
         footer("B / Y  back");
@@ -983,7 +988,7 @@ int launcher_ui(LauncherSettings* s)
             if (item == ITEM_MELEE) {
                 if (s_disc_state != 0) {
                     message("No Melee disc image",
-                            "Put your NTSC 1.02 dump on the SD card as /apps/melee/game.iso.",
+                            "Put your NTSC 1.02 dump on the SD card or a USB drive as /apps/melee/game.iso.",
                             RED);
                     continue;
                 }

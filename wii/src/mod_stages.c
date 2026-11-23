@@ -48,7 +48,14 @@ void melee_wii_disc_after_read(void (*fn)(int second, u32 offset, void* buf, u32
 void melee_wii_disc2_each(void (*fn)(const char* name, u32 offset, u32 size));
 void melee_wii_disc_overlay(u32 from, u32 to, u32 other, const u32* on);
 
-#define VERDICTS_PATH "sd:/apps/melee/20xx-stages.txt"
+static const char* verdicts_path(void)
+{
+    static char path[48];
+    const char* melee_wii_app_dir(void);
+    snprintf(path, sizeof(path), "%s/20xx-stages.txt", melee_wii_app_dir());
+    return path;
+}
+#define VERDICTS_PATH verdicts_path()
 #define LOOKS 15      /* 0 the game's own, 1 to 14 a file each */
 #define LOOK_RANDOM 15
 #define MAX_PATCHES 2

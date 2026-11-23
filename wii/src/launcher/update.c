@@ -33,7 +33,8 @@
 #define ZIP_MAX (64u << 20)
 #define UPDATE_THREAD_PRIORITY 32
 #ifndef SD_ROOT /* (the host tests write elsewhere) */
-#define SD_ROOT "sd:/"
+const char* melee_wii_drive_root(void);
+#define SD_ROOT melee_wii_drive_root() /* the drive the port was started from */
 #endif
 
 static volatile int s_state = UPDATE_IDLE;
@@ -414,8 +415,8 @@ int update_install(void (*progress)(const char* what, int done, int total), char
                 }
                 if (is_dol) {
                     char tmp[256];
-                    snprintf(path, sizeof(path), SD_ROOT "%s", name);
-                    snprintf(tmp, sizeof(tmp), SD_ROOT "%s.new", name);
+                    snprintf(path, sizeof(path), "%s%s", SD_ROOT, name);
+                    snprintf(tmp, sizeof(tmp), "%s%s.new", SD_ROOT, name);
                     if (write_file(tmp, data, len) < 0 || (unlink(path), rename(tmp, path)) != 0) {
                         free(data);
                         free(zip);
@@ -423,7 +424,7 @@ int update_install(void (*progress)(const char* what, int done, int total), char
                         return -1;
                     }
                 } else {
-                    snprintf(path, sizeof(path), SD_ROOT "%s", name);
+                    snprintf(path, sizeof(path), "%s%s", SD_ROOT, name);
                     if (write_file(path, data, len) < 0) {
                         free(data);
                         free(zip);

@@ -21,7 +21,7 @@ are in this repository or in a release.
 **Contents:** [What works](#what-works) · [What you need](#what-you-need) ·
 [Installing](#installing) · [The launcher](#the-launcher) · [Slippi Online](#slippi-online) ·
 [20XX](#20xx) · [Controllers](#controllers) · [Cheats](#cheats) ·
-[Files on the SD card](#files-on-the-sd-card) ·
+[Files on the SD card or USB drive](#files-on-the-sd-card-or-usb-drive) ·
 [When something goes wrong](#when-something-goes-wrong) · [Building](#building) ·
 [The source](#the-source) · [Credits and licences](#credits-and-licences)
 
@@ -29,7 +29,7 @@ are in this repository or in a release.
 
 | | |
 |---|---|
-| The game | All modes, sound and music, movies, saves (on the SD card), 480p with a component cable |
+| The game | All modes, sound and music, movies, saves (on the SD card or USB drive), 480p with a component cable |
 | Slippi Online | Slippi 3.7.0's Direct and Unranked, with rollback, over a wired connection or Wi-Fi; quick chat, connect code history, rumble |
 | Replays | Every online game as a `.slp` file; Melee's own games too, with **Record Melee's games** |
 | Console mirroring | Slippi Launcher can connect to the Wii to watch, record or relay games |
@@ -44,7 +44,8 @@ screen), a delay-based netcode (rollback only), and any disc other than NTSC 1.0
 ## What you need
 
 - A Wii with the [Homebrew Channel](https://wiibrew.org/wiki/Homebrew_Channel) and an SD card
-  (FAT32). Settings, saves, logs and Slippi's files are always on the SD card.
+  (FAT32), or a FAT32 USB drive in its place. Settings, saves, logs and Slippi's files are in
+  `/apps/melee` on whichever of the two the Homebrew Channel starts Melee from.
 - Your own NTSC 1.02 disc image (`GALE01`, revision 2): a plain, uncompressed image with a name
   ending in `.iso` (rename a `.gcm`; CISO and NKit images are not read). The launcher's **Game
   info** checks it: a 1:1 copy has the MD5 `0e63d4223b01d9aba596259dc155a174`.
@@ -54,11 +55,11 @@ screen), a delay-based netcode (rollback only), and any disc other than NTSC 1.0
 
 ## Installing
 
-1. Extract the release zip onto the SD card. It adds `apps/melee` and two files beside it. (To
-   make the zip: [Building](#building).)
-2. Put your disc image on the card as `/apps/melee/game.iso`.
-3. For Slippi Online, copy your account to `/apps/melee/slippi/user.json`:
-   - on Windows, double-click `Copy my Slippi account (Melee).bat` on the SD card;
+1. Extract the release zip onto the top of the SD card (or the USB drive you start it from). It
+   adds `apps/melee` and two files beside it. (To make the zip: [Building](#building).)
+2. Put your disc image on the SD card or a USB drive as `/apps/melee/game.iso`.
+3. For Slippi Online, copy your account to `/apps/melee/slippi/user.json` on that same drive:
+   - on Windows, double-click `Copy my Slippi account (Melee).bat` at the top of the drive;
    - or by hand, from Slippi Launcher's `netplay/User/Slippi/user.json` in
      `%APPDATA%\Slippi Launcher` (Windows), `~/Library/Application Support/Slippi Launcher`
      (macOS) or `~/.config/Slippi Launcher` (Linux).
@@ -93,7 +94,7 @@ The disc image is looked for as `/apps/melee/game.iso`, `/apps/melee/GALE01.iso`
 
 ### Settings
 
-Kept in `sd:/apps/melee/settings.ini`.
+Kept in `/apps/melee/settings.ini`, on the drive Melee was started from.
 
 | Setting | Choices (default first) | |
 |---|---|---|
@@ -136,7 +137,8 @@ on a screen of its own: "Checking for updates...", for up to 30 seconds. B goes 
 at once; the check goes on, and choosing it again picks it up. It says when you are up to date, or
 why it could not check. When there is a newer version, it is installed there and then:
 the launcher downloads the release (over TLS), checks it against the SHA-256 GitHub gives, and
-writes its files where the zip puts them, as installing by hand does; your settings, saves,
+writes its files where the zip puts them, on the drive Melee was started from, as installing by
+hand does; your settings, saves,
 account and disc images are not in it, so they stay. Then start Melee for the Wii again. A new
 version of Slippi Online comes this way: the matchmaking service only pairs players of Slippi's
 current version.
@@ -178,18 +180,19 @@ starting at 2 and kept from then on. More settings, by hand, in
 ## 20XX
 
 Make your 20XX image with [20XX Hack Pack](https://github.com/DRGN-DRC/20XX-HACK-PACK)'s own
-creator, from your NTSC 1.02 image, and put it in `/games`, `/apps/melee` or the root of the SD
-card or a USB drive (any name ending in `.iso` or `.gcm`). The launcher lists it as **20XX**: it starts without Slippi and
-keeps its own saves. Any other 1.02 mod is listed as **Modded Melee**. Up to four are listed.
+creator, from your NTSC 1.02 image, and put it in `/games`, `/apps/melee` or the root of the SD card
+or a USB drive (any name ending in `.iso` or `.gcm`). The launcher lists it as **20XX**: it starts
+without Slippi and keeps its own saves. Any other 1.02 mod is listed as **Modded Melee**. Up to four
+are listed.
 
 20XX's own widescreen follows the launcher's Screen setting, and its lag reduction ("Are you
 using HDMI?") works. Tested with 20XX 5.0.2.
 
 ### 20XX's menu in Slippi Online
 
-To turn it on: with a 20XX image on the card, open the launcher's **Settings** (X; + on a Wii
-Remote) and set **20XX menu** to On. It is off by default, and listed only while a 20XX image is
-found. It is Slippi Online's alone: Melee is never given it.
+To turn it on: with a 20XX image on the SD card or a USB drive, open the launcher's **Settings** (X;
++ on a Wii Remote) and set **20XX menu** to On. It is off by default, and listed only while a 20XX
+image is found. It is Slippi Online's alone: Melee is never given it.
 
 It gives the part of 20XX's debug menu that changes only sound or picture, with your image's songs
 and files. **Extra** on the Online Play screen, under Direct, opens it (and Y, there or on the main
@@ -224,17 +227,18 @@ setting on checks the image's files (about 40 s). For 20XX 5.0.2, 49 of 75 stage
 ## Cheats
 
 Your own Gecko codes for NTSC 1.02, offline, with Settings' **Cheats** on:
-`/apps/melee/codes/GALE01.gct` (or `/codes/GALE01.gct`, there or on a USB drive), the file
-Nintendont and Dolphin use, under 512 KB.
+`/apps/melee/codes/GALE01.gct` on the drive Melee was started from (or else `/codes/GALE01.gct`
+on the SD card or a USB drive), the file Nintendont and Dolphin use, under 512 KB.
 
 - Read: RAM writes and fills (00, 02, 04, 06, 08), if codes (20–2E), their pointer forms, base
   address and end-if codes (42, 4A, E0, E2), and inserted code (C2).
 - Left out: C0 codes, and codes that patch the SDK functions the port replaces. A code type that
   isn't read ends the list; the log says which.
 
-## Files on the SD card
+## Files on the SD card or USB drive
 
-All under `sd:/apps/melee/`.
+All under `/apps/melee/` on the drive the Homebrew Channel starts Melee from (the SD card, or a
+USB drive). The disc and mod images can be on either.
 
 | Path | What |
 |---|---|
@@ -288,9 +292,9 @@ libogc is another version. Elsewhere:
 | `MELEE_ORIG_CODE` | `ON` | The game as the matching build links it. `OFF` builds the game's C sources with GCC instead: no launcher, Slippi Online or Gecko codes, and its floating point differs from the GameCube's |
 | `MELEE_DECOMP_ROOT` | this checkout | Takes the matching build from another checkout |
 
-The release zip holds the SD card's files, with Slippi's files downloaded from Project Slippi's
-GitHub (pinned and checked by SHA-256 in `wii/tools/slippi_files.py`). Your disc image only gives
-the patched files' checksums; nothing of it goes in.
+The release zip holds the files for the Wii's SD card or USB drive, with Slippi's files downloaded
+from Project Slippi's GitHub (pinned and checked by SHA-256 in `wii/tools/slippi_files.py`). Your
+disc image only gives the patched files' checksums; nothing of it goes in.
 
 ```sh
 python3 wii/tools/make_release.py --iso Melee.iso      # build/release/melee-wii-v1.1.0.zip

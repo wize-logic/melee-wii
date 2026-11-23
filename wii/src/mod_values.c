@@ -38,7 +38,14 @@ int melee_wii_disc2_read(u32 offset, void* buf, u32 len);
 int melee_wii_disc2_entry(const char* path);
 void melee_wii_disc_substitute(s32 (*fn)(const char* path));
 
-#define VALUES_PATH "sd:/apps/melee/20xx.ini"
+static const char* values_path(void)
+{
+    static char path[40];
+    const char* melee_wii_app_dir(void);
+    snprintf(path, sizeof(path), "%s/20xx.ini", melee_wii_app_dir());
+    return path;
+}
+#define VALUES_PATH values_path()
 
 static const char* const PLAYLIST_KEYS[MOD_PLAYLISTS] = {
     "menu",        "yoshis_story",      "fountain",     "pokemon_stadium", "dream_land", "battlefield",
@@ -325,7 +332,7 @@ int melee_wii_mod_start(const char* image)
     melee_wii_scene_hook = scene;
     melee_wii_disc_substitute(substitute);
     started = TRUE;
-    OSReport("20XX menu: %s; %s\n", image, have_values ? VALUES_PATH : "no " VALUES_PATH " (20XX's defaults)");
+    OSReport("20XX menu: %s; %s\n", image, have_values ? VALUES_PATH : "no 20xx.ini (20XX's defaults)");
     melee_wii_menu_start();
     return 0;
 }

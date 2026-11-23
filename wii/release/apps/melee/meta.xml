@@ -2,7 +2,7 @@
 <app version="1">
 	<name>Melee for the Wii</name>
 	<coder>wize-logic</coder>
-	<version>1.1.0</version>
+	<version>1.1.1</version>
 	<release_date></release_date>
 	<short_description>Super Smash Bros. Melee, native, with Slippi Online</short_description>
 	<long_description>The decompiled Super Smash Bros. Melee (NTSC 1.02) running natively on the Wii, from your own disc image on the SD card or a USB drive. With Slippi Online (Direct and Unranked) over Wi-Fi or a USB LAN adapter, replays, Slippi Launcher's console mirroring, Slippi's offline codes and your own cheats.

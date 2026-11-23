@@ -15,7 +15,7 @@ from your own disc image. No game files are included.
 ## Setting up
 
 1. Extract the release zip onto the top of the SD card, so it has `/apps/melee/boot.dol` (not
-   inside a folder of its own, such as `/melee-wii-v1.1.0/apps/...`). A FAT32 USB drive works in
+   inside a folder of its own, such as `/melee-wii-v1.1.1/apps/...`). A FAT32 USB drive works in
    place of the SD card: Melee keeps its settings, saves and Slippi account in `/apps/melee` on
    whichever drive the Homebrew Channel starts it from.
 2. Add your NTSC 1.02 image as `/apps/melee/game.iso`, on the SD card or a USB drive.

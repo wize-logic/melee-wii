@@ -7,7 +7,7 @@
 #include <stddef.h>
 
 #ifndef MELEE_WII_VERSION /* (the host tests set their own) */
-#define MELEE_WII_VERSION "1.1.0"
+#define MELEE_WII_VERSION "1.1.1"
 #endif
 /* Where the launcher looks for newer releases (launcher/update.c) */
 #define MELEE_WII_UPDATE_REPO "wize-logic/melee-wii"

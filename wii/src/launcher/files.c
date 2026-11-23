@@ -189,9 +189,20 @@ int slippi_account(char* name, int name_size, char* code, int code_size)
     if (json == NULL) {
         return -1;
     }
-    json_string(json, "displayName", name, name_size);
-    json_string(json, "connectCode", code, code_size);
+    /* what Slippi Online needs (so_user_parse): no "Play online" without it */
+    {
+        char uid[64], key[96];
+        if (json_string(json, "uid", uid, sizeof(uid)) == 0 && uid[0] &&
+            json_string(json, "playKey", key, sizeof(key)) == 0 && key[0]) {
+            json_string(json, "displayName", name, name_size);
+            json_string(json, "connectCode", code, code_size);
+        }
+        memset(key, 0, sizeof(key));
+    }
     free(json);
+    if (strchr(code, '#') == NULL) {
+        code[0] = '\0';
+    }
     return code[0] != '\0' ? 0 : -1;
 }
 

@@ -1,7 +1,7 @@
 # Melee for the Wii: copies your Slippi account (user.json, from Slippi
-# Launcher on this PC) to the SD card, for Slippi Online on the Wii to log in
-# with. Started by "Copy my Slippi account (Melee).bat". Only that one file is
-# copied, and only to the card; nothing is sent anywhere.
+# Launcher on this PC) to the Wii's SD card or USB drive, for Slippi Online on
+# the Wii to log in with. Started by "Copy my Slippi account (Melee).bat". Only
+# that one file is copied, and only to that drive; nothing is sent anywhere.
 param([string]$Here = '')
 $ErrorActionPreference = 'Stop'
 
@@ -13,7 +13,7 @@ function Stop-Copy($Message) {
 
 function Read-Account($Path) {
     try {
-        $a = Get-Content -Raw -Encoding UTF8 $Path | ConvertFrom-Json
+        $a = Get-Content -Raw -Encoding UTF8 -LiteralPath $Path | ConvertFrom-Json
     } catch { return $null }
     if (-not $a.uid -or -not $a.playKey -or -not $a.connectCode) { return $null }
     return $a
@@ -24,7 +24,7 @@ function Describe($a) {
     return "$name ($($a.connectCode))"
 }
 
-Write-Host 'Melee for the Wii: copy your Slippi account to the SD card'
+Write-Host 'Melee for the Wii: copy your Slippi account to the Wii''s SD card or USB drive'
 Write-Host '(Unofficial: not made by Project Slippi or Nintendo.)'
 Write-Host ''
 
@@ -32,7 +32,7 @@ Write-Host ''
 $candidates = @()
 foreach ($sub in @('netplay', 'netplay-beta')) {
     $p = Join-Path $env:APPDATA "Slippi Launcher\$sub\User\Slippi\user.json"
-    if (Test-Path $p) { $candidates += $p }
+    if (Test-Path -LiteralPath $p) { $candidates += $p }
 }
 $accounts = @()
 foreach ($p in $candidates) {
@@ -55,49 +55,81 @@ if ($accounts.Count -gt 1) {
     if ($n -match '^\d+$' -and [int]$n -ge 1 -and [int]$n -le $accounts.Count) { $pick = $accounts[[int]$n - 1] }
 }
 
-# 2. The SD card: where this script is (the zip extracted to the card), or a
-#    drive that has Melee for the Wii on it.
+# 2. The Wii's drive (an SD card or a USB drive): the Wii reads only
+#    \apps\melee at the top of the drive it starts Melee from, so the account
+#    goes there. Where this script is counts only when it is the top of a drive
+#    (the zip extracted onto it); a folder on this PC or a folder inside the
+#    drive is not where the Wii looks.
+function Test-Card($Root) { Test-Path -LiteralPath (Join-Path $Root 'apps\melee\boot.dol') }
 $cards = @()
-if ($Here -and (Test-Path (Join-Path $Here 'apps\melee\slippi\netplay.gct'))) {
-    $cards += (Resolve-Path $Here).Path
+$hereRoot = ''
+if ($Here -and (Test-Path -LiteralPath $Here)) { $hereRoot = (Resolve-Path -LiteralPath $Here).Path }
+if ($hereRoot -and [IO.Path]::GetPathRoot($hereRoot) -eq $hereRoot -and (Test-Card $hereRoot)) {
+    $cards += $hereRoot
 } else {
+    if ($hereRoot) {
+        Write-Host "This copy of Melee for the Wii is in $hereRoot," -ForegroundColor Yellow
+        Write-Host 'which is not the top of an SD card or USB drive: the Wii would not see an account put here.' -ForegroundColor Yellow
+        Write-Host 'Looking for the Wii''s SD card or USB drive instead...'
+        Write-Host ''
+    }
+    $system = [IO.Path]::GetPathRoot($env:SystemRoot)
     foreach ($d in [IO.DriveInfo]::GetDrives()) {
-        if ($d.IsReady -and (Test-Path (Join-Path $d.RootDirectory.FullName 'apps\melee\slippi\netplay.gct'))) {
-            $cards += $d.RootDirectory.FullName
-        }
+        $root = $d.RootDirectory.FullName
+        if ($d.IsReady -and $root -ne $system -and (Test-Card $root)) { $cards += $root }
     }
 }
 if ($cards.Count -eq 0) {
-    Stop-Copy ("Melee for the Wii was not found on any SD card.`n" +
-        "Put the Wii's SD card in this PC, extract the release zip onto it (so it has`n" +
-        "apps\melee\slippi), then run this again from the SD card.")
+    Stop-Copy ("No SD card or USB drive with Melee for the Wii was found.`n" +
+        "  1. Put the Wii's SD card (or USB drive) in this PC.`n" +
+        "  2. Extract the release zip onto the top of it, so it has`n" +
+        "     apps\melee\boot.dol (E:\apps\melee\boot.dol, not E:\melee-wii\apps\...).`n" +
+        "  3. Run this again from that drive.")
 }
 $card = $cards[0]
 if ($cards.Count -gt 1) {
     Write-Host 'Drives with Melee for the Wii:'
     for ($i = 0; $i -lt $cards.Count; $i++) { Write-Host "  $($i + 1). $($cards[$i])" }
-    $n = Read-Host 'Type the number of the Wii''s SD card and press Enter'
+    $n = Read-Host 'Type the number of the drive you start Melee from on the Wii and press Enter'
     if ($n -match '^\d+$' -and [int]$n -ge 1 -and [int]$n -le $cards.Count) { $card = $cards[[int]$n - 1] }
 }
+try {
+    $format = ([IO.DriveInfo]::new($card)).DriveFormat
+    if ($format -and $format -notmatch '^FAT') {
+        Write-Host "Note: $card is formatted $format. The Wii reads only FAT32 SD cards and USB drives." -ForegroundColor Yellow
+    }
+} catch {}
 
-# 3. Copy (the previous account, if a different one, is kept beside it).
-$dest = Join-Path $card 'apps\melee\slippi\user.json'
-if (Test-Path $dest) {
+# 3. Copy (the previous account, if a different one, is kept beside it). The
+#    bytes are Slippi Launcher's, less a byte order mark if an editor added one.
+$bytes = [IO.File]::ReadAllBytes($pick.Path)
+if ($bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF) {
+    $bytes = $bytes[3..($bytes.Length - 1)]
+}
+$folder = Join-Path $card 'apps\melee\slippi'
+$dest = Join-Path $folder 'user.json'
+New-Item -ItemType Directory -Force -Path $folder | Out-Null
+if (Test-Path -LiteralPath $dest) {
     $old = Read-Account $dest
-    if ((Get-FileHash $dest).Hash -eq (Get-FileHash $pick.Path).Hash) {
-        Write-Host "Your account $(Describe $pick.Account) is already on the SD card ($card)."
-        Write-Host 'Nothing to do: put the card in your Wii and start Melee.'
+    if ([Convert]::ToBase64String([IO.File]::ReadAllBytes($dest)) -eq [Convert]::ToBase64String($bytes)) {
+        Write-Host "Your account $(Describe $pick.Account) is already on $card."
+        Write-Host 'Nothing to do: put it in your Wii and start Melee.'
         exit 0
     }
     $backup = "$dest.old-$(Get-Date -Format yyyyMMdd-HHmmss)"
-    Move-Item $dest $backup
-    if ($old) { Write-Host "The SD card had the account $(Describe $old): kept as $(Split-Path -Leaf $backup)." }
+    Move-Item -LiteralPath $dest $backup
+    if ($old) { Write-Host "$card had the account $(Describe $old): kept as $(Split-Path -Leaf $backup)." }
 }
-Copy-Item $pick.Path $dest
+[IO.File]::WriteAllBytes($dest, [byte[]]$bytes)
 try { Write-VolumeCache -DriveLetter $card[0] -ErrorAction SilentlyContinue } catch {}
+$check = Read-Account $dest
+if (-not $check -or $check.uid -ne $pick.Account.uid) {
+    Stop-Copy "The account could not be written to $dest. Is it locked (an SD card's write-protect switch)?"
+}
 Write-Host ''
-Write-Host "Done: your Slippi account $(Describe $pick.Account) is on the SD card ($card)." -ForegroundColor Green
+Write-Host "Done: your Slippi account $(Describe $pick.Account) is on $card." -ForegroundColor Green
+Write-Host "  ($dest)"
 Write-Host ''
-Write-Host 'Next: safely eject the SD card, put it in your Wii, and start Melee'
+Write-Host 'Next: safely eject it, put it in your Wii, and start Melee'
 Write-Host 'from the Homebrew Channel. (Keep user.json private: it is your Slippi login.)'
 exit 0

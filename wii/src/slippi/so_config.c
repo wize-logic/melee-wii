@@ -236,6 +236,12 @@ int so_user_parse(SoUser *user, const char *text, u32 len)
 {
 	SoJson doc;
 	memset(user, 0, sizeof(*user));
+	/* A byte order mark, as Windows editors may add when the file is copied
+	 * or fixed by hand: Slippi Dolphin's reader skips it too. */
+	if (len >= 3 && (u8)text[0] == 0xEF && (u8)text[1] == 0xBB && (u8)text[2] == 0xBF) {
+		text += 3;
+		len -= 3;
+	}
 	if (so_json_parse(&doc, text, len) < 0 || so_json_type(&doc) != SO_JSON_OBJECT)
 		return -1;
 	so_json_get_string(&doc, "uid", user->uid, sizeof(user->uid), "");
@@ -279,7 +285,7 @@ static const char test_overrides[] =
 
 int so_config_load(SoConfig *config, SoUser *user)
 {
-	static char text[2048];
+	static char text[4096];
 	int n, res;
 
 	so_config_defaults(config);

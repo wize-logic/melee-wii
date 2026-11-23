@@ -1,7 +1,8 @@
 Your Slippi account goes in this folder, as user.json.
 
 Easiest (Windows): double-click "Copy my Slippi account (Melee).bat" at the top
-of this SD card. It copies the account Slippi Launcher on your PC is logged in to.
+of this drive (the Wii's SD card or USB drive). It copies the account Slippi
+Launcher on your PC is logged in to.
 
 By hand: copy user.json from Slippi Launcher's files into this folder.
   Windows: %APPDATA%\Slippi Launcher\netplay\User\Slippi\user.json
